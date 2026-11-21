@@ -114,6 +114,7 @@ export default function MobileMenu({ open, onClose, active }: { open: boolean; o
             </motion.ul>
 
             <div className="border-t border-sand p-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted">{t('a11y.language')}</p>
               <LanguageSwitcher id="mobile" />
             </div>
           </motion.nav>

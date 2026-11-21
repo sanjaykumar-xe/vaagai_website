@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { Heart, Search, ShoppingBag } from 'lucide-react'
+import { Heart, Menu, Search, ShoppingBag, X } from 'lucide-react'
 import { motion, useScroll } from 'motion/react'
 import { NAV } from '../../data/site'
 import { useLang } from '../../i18n/LanguageContext'
@@ -76,13 +76,15 @@ export default function Header() {
           </ul>
         </nav>
 
-        <div className="ml-auto flex items-center gap-0.5 lg:ml-0">
+        <div className="ml-auto flex items-center gap-0.5 sm:gap-1 lg:ml-0">
+          <div className="mr-0.5 sm:mr-1 lg:ml-2">
+            <LanguageSwitcher id="header" />
+          </div>
           <button type="button" className={iconBtn} aria-label={t('a11y.search')} aria-expanded={searching} onClick={() => setSearching(s => !s)}><Search className="h-5 w-5" aria-hidden /></button>
           <button type="button" className={`${iconBtn} hidden sm:grid`} aria-label={t('a11y.wishlist')} onClick={() => notify(t('soon'))}><Heart className="h-5 w-5" aria-hidden /></button>
           <button type="button" className={iconBtn} aria-label={t('a11y.cart')} onClick={() => notify(t('soon'))}><ShoppingBag className="h-5 w-5" aria-hidden /></button>
-          <div className="ml-2 hidden lg:block"><LanguageSwitcher id="header" /></div>
           
-          {/* Morphing Hamburger button */}
+          {/* Mobile Menu button */}
           <button
             type="button"
             className={`${iconBtn} lg:hidden`}
@@ -90,23 +92,11 @@ export default function Header() {
             aria-expanded={menu}
             onClick={() => setMenu(m => !m)}
           >
-            <span className="relative flex h-5 w-5 flex-col items-center justify-center" aria-hidden="true">
-              <motion.span
-                animate={menu ? { rotate: 45, y: 5 } : { rotate: 0, y: 0 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
-                className="block h-[1.75px] w-4.5 rounded-full bg-charcoal"
-              />
-              <motion.span
-                animate={menu ? { opacity: 0 } : { opacity: 1 }}
-                transition={{ duration: 0.15 }}
-                className="my-1 block h-[1.75px] w-4.5 rounded-full bg-charcoal"
-              />
-              <motion.span
-                animate={menu ? { rotate: -45, y: -5 } : { rotate: 0, y: 0 }}
-                transition={{ duration: 0.2, ease: 'easeInOut' }}
-                className="block h-[1.75px] w-4.5 rounded-full bg-charcoal"
-              />
-            </span>
+            {menu ? (
+              <X className="h-6 w-6 text-charcoal" aria-hidden="true" />
+            ) : (
+              <Menu className="h-6 w-6 text-charcoal" aria-hidden="true" />
+            )}
           </button>
         </div>
       </div>
