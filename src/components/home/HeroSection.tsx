@@ -2,7 +2,6 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useLang } from '../../i18n/LanguageContext'
 import { EASING } from '../../lib/motion'
 import Button from '../common/Button'
-import ImageSlot from '../common/ImageSlot'
 
 export default function HeroSection() {
   const { t } = useLang()
@@ -90,41 +89,36 @@ export default function HeroSection() {
           )}
         </div>
 
-        {/* Arched frame with unfolding clip-path and settling image */}
-        <div className="relative mx-auto w-full max-w-md lg:max-w-none">
-          {/* Gold offset outline */}
+        {/* Right hero column: Complete original composition preserving 802x718 ratio */}
+        <div className="relative mx-auto w-full max-w-xl lg:max-w-none">
           {shouldReduceMotion ? (
-            <div className="absolute inset-0 translate-x-3 translate-y-3 rounded-t-[999px] rounded-b-panel border border-gold/70" aria-hidden="true" />
-          ) : (
-            <motion.div
-              className="absolute inset-0 rounded-t-[999px] rounded-b-panel border border-gold/70"
-              initial={{ opacity: 0, x: 0, y: 0 }}
-              animate={{ opacity: 1, x: 12, y: 12 }}
-              transition={{ duration: 0.8, delay: 0.4, ease: EASING.default }}
-              aria-hidden="true"
-            />
-          )}
-
-          {/* Arched container unfolding from bottom */}
-          {shouldReduceMotion ? (
-            <div className="relative aspect-[4/5] overflow-hidden rounded-t-[999px] rounded-b-panel bg-sand">
-              <ImageSlot imageKey="hero" alt="Traditional brass lamps and metalware" eager showLabel />
+            <div className="w-full">
+              <img
+                src="/images/vaagai-hero-full-composition.png"
+                alt="Traditional brass lamps and metalware"
+                width={802}
+                height={718}
+                className="block h-auto w-full object-contain"
+                loading="eager"
+                decoding="async"
+              />
             </div>
           ) : (
             <motion.div
-              className="relative aspect-[4/5] overflow-hidden rounded-t-[999px] rounded-b-panel bg-sand"
-              initial={{ clipPath: 'inset(100% 0% 0% 0%)' }}
-              animate={{ clipPath: 'inset(0% 0% 0% 0%)' }}
-              transition={{ duration: 0.9, delay: 0.1, ease: EASING.default }}
+              className="w-full"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: EASING.default }}
             >
-              <motion.div
-                className="h-full w-full"
-                initial={{ scale: 1.06 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 1.2, delay: 0.1, ease: EASING.default }}
-              >
-                <ImageSlot imageKey="hero" alt="Traditional brass lamps and metalware" eager showLabel />
-              </motion.div>
+              <img
+                src="/images/vaagai-hero-full-composition.png"
+                alt="Traditional brass lamps and metalware"
+                width={802}
+                height={718}
+                className="block h-auto w-full object-contain"
+                loading="eager"
+                decoding="async"
+              />
             </motion.div>
           )}
         </div>

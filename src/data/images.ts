@@ -1,7 +1,7 @@
 // Single place for every image. Leave a key undefined to show a placeholder.
 // To use real photography: drop files in /public/images and set e.g. hero: '/images/hero.jpg'.
 export const images: Record<string, string | undefined> = {
-  hero: undefined,
+  hero: '/images/vaagai-hero-full-composition.png',
   brandStory: undefined,
   'cat-pooja': undefined, 'cat-brassware': undefined, 'cat-silverware': undefined, 'cat-cast-iron': undefined,
   'cat-aluminium': undefined, 'cat-lamps': undefined, 'cat-kitchen': undefined, 'cat-decor': undefined,
