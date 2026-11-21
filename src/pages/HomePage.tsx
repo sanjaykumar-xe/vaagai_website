@@ -6,7 +6,7 @@ import Footer from '../components/layout/Footer'
 import HeroSection from '../components/home/HeroSection'
 import CategorySection from '../components/home/CategorySection'
 import FeaturedProducts from '../components/home/FeaturedProducts'
-import BrandStory from '../components/home/BrandStory'
+import StoreExperienceVideo from '../components/home/StoreExperienceVideo'
 import WhyChooseUs from '../components/home/WhyChooseUs'
 import CollectionsSection from '../components/home/CollectionsSection'
 import InstagramSection from '../components/home/InstagramSection'
@@ -32,7 +32,7 @@ export default function HomePage() {
         <HeroSection />
         <CategorySection />
         <FeaturedProducts />
-        <BrandStory />
+        <StoreExperienceVideo />
         <WhyChooseUs />
         <CollectionsSection />
         <InstagramSection />
