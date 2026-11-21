@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Pause, Play, Volume2, VolumeX } from 'lucide-react'
+import { Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react'
 import { motion, useReducedMotion } from 'motion/react'
 import { useLang } from '../../i18n/LanguageContext'
 import Reveal from '../common/Reveal'
 
 export default function StoreExperienceVideo() {
-  const { t } = useLang()
+  const { lang, t } = useLang()
   const shouldReduceMotion = useReducedMotion()
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -14,6 +14,7 @@ export default function StoreExperienceVideo() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMuted, setIsMuted] = useState(true)
   const [manualPaused, setManualPaused] = useState(false)
+  const [isEnded, setIsEnded] = useState(false)
   const [hasError, setHasError] = useState(false)
 
   // IntersectionObserver: automatically start playback when ~45% visible; pause when scrolled away
@@ -28,8 +29,8 @@ export default function StoreExperienceVideo() {
           const isVisible = entry.intersectionRatio >= 0.45
 
           if (isVisible) {
-            // Autoplay only if visitor hasn't manually paused during this visit and reduced motion is off
-            if (!manualPaused && !shouldReduceMotion) {
+            // Autoplay only if visitor hasn't manually paused, video hasn't finished, and reduced motion is off
+            if (!manualPaused && !isEnded && !shouldReduceMotion) {
               const playPromise = video.play()
               if (playPromise !== undefined) {
                 playPromise
@@ -58,11 +59,16 @@ export default function StoreExperienceVideo() {
 
     observer.observe(container)
     return () => observer.disconnect()
-  }, [manualPaused, shouldReduceMotion])
+  }, [manualPaused, isEnded, shouldReduceMotion])
 
   const togglePlay = () => {
     const video = videoRef.current
     if (!video) return
+
+    if (isEnded) {
+      handleReplay()
+      return
+    }
 
     if (isPlaying) {
       video.pause()
@@ -78,6 +84,22 @@ export default function StoreExperienceVideo() {
           })
           .catch(() => setIsPlaying(false))
       }
+    }
+  }
+
+  const handleReplay = () => {
+    const video = videoRef.current
+    if (!video) return
+    video.currentTime = 0
+    const playPromise = video.play()
+    if (playPromise !== undefined) {
+      playPromise
+        .then(() => {
+          setIsPlaying(true)
+          setIsEnded(false)
+          setManualPaused(false)
+        })
+        .catch(() => setIsPlaying(false))
     }
   }
 
@@ -122,20 +144,41 @@ export default function StoreExperienceVideo() {
               <video
                 ref={videoRef}
                 src="/videos/vaagai-store-tour.mp4"
-                poster="/images/vaagai-store-poster.webp"
                 muted={isMuted}
                 playsInline
-                loop
                 preload="metadata"
                 onError={() => setHasError(true)}
-                onPlay={() => setIsPlaying(true)}
+                onPlay={() => {
+                  setIsPlaying(true)
+                  setIsEnded(false)
+                }}
                 onPause={() => setIsPlaying(false)}
+                onEnded={() => {
+                  setIsEnded(true)
+                  setIsPlaying(false)
+                }}
                 className="h-full w-full object-cover md:object-contain"
                 aria-label="Vaagai Metals Traders showroom walkthrough video"
               />
 
-              {/* Big Center Play Overlay (when paused) */}
-              {!isPlaying && (
+              {/* Replay Option in the Center when video finishes */}
+              {isEnded ? (
+                <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/45 backdrop-blur-[2px]">
+                  <motion.button
+                    type="button"
+                    onClick={handleReplay}
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="inline-flex items-center gap-2.5 rounded-full border border-champagne bg-burgundy px-6 py-3 font-semibold text-white shadow-2xl transition-colors hover:bg-wine focus-visible:outline-gold"
+                  >
+                    <RotateCcw className="h-5 w-5 text-champagne" aria-hidden="true" />
+                    <span>{lang === 'ta' ? 'மீண்டும் பார்க்க' : 'Replay'}</span>
+                  </motion.button>
+                </div>
+              ) : !isPlaying ? (
+                /* Big Center Play Overlay (when manually paused) */
                 <button
                   type="button"
                   onClick={togglePlay}
@@ -152,7 +195,7 @@ export default function StoreExperienceVideo() {
                     <Play className="ml-1 h-7 w-7 text-champagne sm:h-9 sm:w-9" fill="currentColor" aria-hidden="true" />
                   </motion.span>
                 </button>
-              )}
+              ) : null}
 
               {/* Subtle Integrated Controls Bar (Bottom) */}
               <div
@@ -188,10 +231,13 @@ export default function StoreExperienceVideo() {
                   </button>
                 </div>
 
-                {/* Showroom Badge */}
-                <div className="hidden items-center gap-2 rounded-full border border-gold/40 bg-wine/80 px-3.5 py-1 text-xs font-medium text-champagne sm:flex">
-                  <span className="h-1.5 w-1.5 rounded-full bg-gold animate-pulse" aria-hidden="true" />
-                  <span>Vaagai Showroom Tour</span>
+                {/* Static Store Brandmark Logo at Bottom-Right */}
+                <div className="flex items-center pr-1" aria-hidden="true">
+                  <img
+                    src="/brand/vaagai-logo-header.png"
+                    alt="Vaagai Metals Traders"
+                    className="h-8 w-auto rounded border border-white/20 bg-burgundy/85 p-1 shadow-md backdrop-blur-sm sm:h-10"
+                  />
                 </div>
               </div>
             </div>

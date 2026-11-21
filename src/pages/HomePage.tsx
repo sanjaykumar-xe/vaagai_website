@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useLang } from '../i18n/LanguageContext'
-import AnnouncementBar from '../components/layout/AnnouncementBar'
 import Header from '../components/layout/Header'
 import Footer from '../components/layout/Footer'
 import HeroSection from '../components/home/HeroSection'
@@ -26,7 +25,6 @@ export default function HomePage() {
 
   return (
     <div className={`transition-opacity duration-200 ease-out ${fading ? 'opacity-40' : 'opacity-100'}`}>
-      <AnnouncementBar />
       <Header />
       <main>
         <HeroSection />
