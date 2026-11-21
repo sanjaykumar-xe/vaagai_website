@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Lora', 'Noto Sans Tamil', serif;
+  --font-body: 'DM Sans', 'Noto Sans Tamil', sans-serif;
+}
+html[lang='ta'] {
+  --font-display: 'Noto Sans Tamil', sans-serif;
+  --font-body: 'Noto Sans Tamil', 'DM Sans', sans-serif;
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply bg-ivory font-sans text-charcoal antialiased; line-height: 1.6; }
+  h1, h2, h3 { @apply font-display font-semibold text-burgundy; line-height: 1.2; }
+  html[lang='ta'] body { line-height: 1.75; }
+  html[lang='ta'] h1, html[lang='ta'] h2, html[lang='ta'] h3 { line-height: 1.4; }
+  :focus-visible { @apply outline-2 outline-offset-2 outline-gold; outline-style: solid; }
+  section[id] { scroll-margin-top: 5rem; }
+}
+
+.hero-title { font-size: clamp(2rem, 1.2rem + 3vw, 3.5rem); }
+html[lang='ta'] .hero-title { font-size: clamp(1.7rem, 1rem + 2.4vw, 2.75rem); }
+.section-title { font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.25rem); }
+html[lang='ta'] .section-title { font-size: clamp(1.35rem, 1rem + 1.3vw, 2rem); }
+
+
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation: none !important; transition-duration: 0.01ms !important; }
+}
