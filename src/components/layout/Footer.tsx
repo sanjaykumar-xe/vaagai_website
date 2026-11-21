@@ -14,8 +14,8 @@ export default function Footer() {
   const notify = useToast()
   const soon = () => notify(t('soon'))
 
-  // Link with underline growing from left over 200ms
-  const link = 'relative inline-block text-white/80 hover:text-white after:content-[""] after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:w-full after:bg-champagne after:origin-left after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-200'
+  // Link with underline growing from left over 180ms
+  const link = 'relative inline-block text-white/80 hover:text-white after:content-[""] after:absolute after:bottom-0 after:left-0 after:h-[1.5px] after:w-full after:bg-champagne after:origin-left after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-180'
   const btnLink = `${link} text-left`
   const head = 'mb-4 text-base font-semibold text-champagne'
 
@@ -32,7 +32,7 @@ export default function Footer() {
         </Reveal>
 
         {/* Column 2 */}
-        <Reveal delay={0.08}>
+        <Reveal delay={0.06}>
           <nav aria-label={t('footer.links')}>
             <h2 className={head}>{t('footer.links')}</h2>
             <ul className="space-y-2.5 text-sm">
@@ -46,7 +46,7 @@ export default function Footer() {
         </Reveal>
 
         {/* Column 3 */}
-        <Reveal delay={0.16}>
+        <Reveal delay={0.12}>
           <div>
             <h2 className={head}>{t('footer.cats')}</h2>
             <ul className="space-y-2.5 text-sm">
@@ -60,7 +60,7 @@ export default function Footer() {
         </Reveal>
 
         {/* Column 4 */}
-        <Reveal delay={0.24}>
+        <Reveal delay={0.18}>
           <div>
             <h2 className={head}>{t('footer.contact')}</h2>
             <ul className="space-y-2.5 text-sm text-white/80">
@@ -77,13 +77,13 @@ export default function Footer() {
         </Reveal>
       </div>
 
-      {/* Gold divider line drawing from left to right (scaleX 0 -> 1, 800ms) once */}
+      {/* Gold divider line drawing from left to right (scaleX 0 -> 1, 500ms) once */}
       <motion.div
         className="border-t border-gold/40"
         initial={{ scaleX: 0 }}
         whileInView={{ scaleX: 1 }}
         viewport={VIEWPORT_CONFIG}
-        transition={{ duration: 0.8, ease: EASING.default }}
+        transition={{ duration: 0.5, ease: EASING.default }}
         style={{ transformOrigin: '0% 50%' }}
         aria-hidden="true"
       />

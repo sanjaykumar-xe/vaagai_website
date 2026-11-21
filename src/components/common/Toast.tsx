@@ -20,10 +20,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           {msg && (
             <motion.p
               key={msg}
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8, transition: { duration: 0.18 } }}
-              transition={{ type: 'spring', damping: 28, stiffness: 280 }}
+              exit={{ opacity: 0, y: 4, transition: { duration: 0.14 } }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
               className="rounded-control bg-wine px-4 py-3 text-sm text-white shadow-lg"
             >
               {msg}

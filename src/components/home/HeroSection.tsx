@@ -8,7 +8,6 @@ export default function HeroSection() {
   const shouldReduceMotion = useReducedMotion()
 
   const titleText = t('hero.title')
-  const words = titleText.split(' ')
 
   return (
     <section id="home" aria-labelledby="hero-title" className="relative flex w-full overflow-hidden lg:min-h-[calc(100vh-4.5rem)] lg:items-center">
@@ -16,32 +15,32 @@ export default function HeroSection() {
         {/* Left Column: Heading, Description, CTAs (~15% from left on large desktop, max-w ~540px) */}
         <div className="flex w-full justify-start px-4 sm:px-6 md:px-8 lg:justify-end lg:pl-[6vw] xl:pl-[10vw] 2xl:pl-[14vw] lg:pr-8 xl:pr-12">
           <div className="w-full max-w-[540px]">
-            {/* Word-by-word BlurText entrance for headline */}
+            {/* Line-by-line entrance for headline */}
             <h1
               id="hero-title"
               className="hero-title"
               aria-label={titleText}
             >
-              {words.map((word, i) => (
+              {titleText.split(/(?<=\.)\s+/).filter(Boolean).map((line, i) => (
                 <span
-                  key={`${word}-${i}`}
-                  className="inline-block py-[0.1em] mr-[0.28em] whitespace-nowrap"
+                  key={`${line}-${i}`}
+                  className="block py-[0.05em]"
                   aria-hidden="true"
                 >
                   {shouldReduceMotion ? (
-                    <span>{word}</span>
+                    <span>{line}</span>
                   ) : (
                     <motion.span
                       className="inline-block"
-                      initial={{ opacity: 0, filter: 'blur(6px)', y: 12 }}
-                      animate={{ opacity: 1, filter: 'blur(0px)', y: 0 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{
-                        duration: 0.55,
-                        delay: i * 0.07,
+                        duration: 0.5,
+                        delay: i * 0.1,
                         ease: EASING.default,
                       }}
                     >
-                      {word}
+                      {line}
                     </motion.span>
                   )}
                 </span>
@@ -54,9 +53,9 @@ export default function HeroSection() {
             ) : (
               <motion.p
                 className="mt-5 max-w-lg text-[1.0625rem] text-charcoal/90"
-                initial={{ opacity: 0, y: 14 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.25, ease: EASING.default }}
+                transition={{ duration: 0.45, delay: 0.15, ease: EASING.default }}
               >
                 {t('hero.desc')}
               </motion.p>
@@ -71,18 +70,18 @@ export default function HeroSection() {
             ) : (
               <motion.div
                 className="mt-8 flex flex-col gap-3 sm:flex-row"
-                initial={{ opacity: 0, y: 14 }}
+                initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.35, ease: EASING.default }}
+                transition={{ duration: 0.45, delay: 0.22, ease: EASING.default }}
               >
                 <div className="relative overflow-hidden rounded-control">
                   <Button href="#categories">{t('hero.cta1')}</Button>
-                  {/* ShinyText single sweep ~1.5s after load */}
+                  {/* ShinyText single sweep ~1.1s after load */}
                   <motion.span
                     className="pointer-events-none absolute inset-0 -skew-x-12 bg-gradient-to-r from-transparent via-white/30 to-transparent"
                     initial={{ x: '-150%' }}
                     animate={{ x: '150%' }}
-                    transition={{ delay: 1.5, duration: 0.85, ease: 'easeInOut' }}
+                    transition={{ delay: 1.1, duration: 0.75, ease: 'easeInOut' }}
                     aria-hidden="true"
                   />
                 </div>
@@ -110,9 +109,9 @@ export default function HeroSection() {
             ) : (
               <motion.div
                 className="w-full"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8, delay: 0.2, ease: EASING.default }}
+                initial={{ opacity: 0, scale: 0.99 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.1, ease: EASING.default }}
               >
                 <img
                   src="/images/vaagai-hero-full-composition.png"

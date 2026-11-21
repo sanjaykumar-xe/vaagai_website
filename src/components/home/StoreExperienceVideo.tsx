@@ -130,7 +130,7 @@ export default function StoreExperienceVideo() {
       </Reveal>
 
       {/* Cinematic Video Showcase */}
-      <Reveal distance={24} duration={0.8}>
+      <Reveal distance={12} duration={0.45}>
         <div
           ref={containerRef}
           className="group relative mx-auto max-w-5xl overflow-hidden rounded-panel border border-sand bg-charcoal shadow-xl"
@@ -167,10 +167,11 @@ export default function StoreExperienceVideo() {
                   <motion.button
                     type="button"
                     onClick={handleReplay}
-                    initial={{ scale: 0.9, opacity: 0 }}
+                    initial={{ scale: 0.92, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.04 }}
+                    whileTap={{ scale: 0.96 }}
+                    transition={{ duration: 0.14 }}
                     className="inline-flex items-center gap-2.5 rounded-full border border-champagne bg-burgundy px-6 py-3 font-semibold text-white shadow-2xl transition-colors hover:bg-wine focus-visible:outline-gold"
                   >
                     <RotateCcw className="h-5 w-5 text-champagne" aria-hidden="true" />
@@ -186,10 +187,11 @@ export default function StoreExperienceVideo() {
                   className="absolute inset-0 z-10 flex items-center justify-center bg-black/25 transition-opacity hover:bg-black/35 focus-visible:outline-gold"
                 >
                   <motion.span
-                    initial={{ scale: 0.9, opacity: 0 }}
+                    initial={{ scale: 0.92, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    whileHover={{ scale: 1.08 }}
+                    whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    transition={{ duration: 0.14 }}
                     className="grid h-16 w-16 place-items-center rounded-full border border-champagne/60 bg-burgundy/90 text-white shadow-xl backdrop-blur-sm sm:h-20 sm:w-20"
                   >
                     <Play className="ml-1 h-7 w-7 text-champagne sm:h-9 sm:w-9" fill="currentColor" aria-hidden="true" />

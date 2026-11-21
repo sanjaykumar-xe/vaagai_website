@@ -28,7 +28,7 @@ export default function Reveal({
   children,
   delay = 0,
   direction = 'up',
-  distance = 22,
+  distance = 12,
   duration = DURATION.reveal,
   as = 'div',
   className = '',

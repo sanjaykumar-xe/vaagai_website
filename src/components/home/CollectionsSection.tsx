@@ -36,7 +36,7 @@ export default function CollectionsSection() {
         >
           {collections.map((c, i) => (
             <li key={c.slug} className="w-[72%] shrink-0 snap-start sm:w-[44%] lg:w-auto">
-              <Reveal delay={Math.min(i * 0.08, 0.4)}>
+              <Reveal delay={Math.min(i * 0.06, 0.3)}>
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.98 }}
@@ -44,16 +44,16 @@ export default function CollectionsSection() {
                   onClick={() => notify(t('soon'))}
                   className="group relative block aspect-[3/4] w-full overflow-hidden rounded-card text-left focus-visible:outline-gold"
                 >
-                  <div className="h-full w-full transition-transform duration-500 ease-out group-hover:scale-105">
+                  <div className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-[1.02]">
                     <ImageSlot imageKey={c.imageKey} alt={pick(c.name)} />
                   </div>
 
                   {/* Gradient overlay rising on hover */}
-                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-wine via-wine/85 to-transparent p-5 pt-16 text-white transition-all duration-300 ease-out group-hover:pt-20">
-                    <h3 className="!text-white text-lg transition-transform duration-300 ease-out group-hover:-translate-y-1.5">
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-wine via-wine/85 to-transparent p-5 pt-16 text-white transition-all duration-200 ease-out group-hover:pt-18">
+                    <h3 className="!text-white text-lg transition-transform duration-200 ease-out group-hover:-translate-y-[3px]">
                       {pick(c.name)}
                     </h3>
-                    <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-champagne transition-all duration-300 ease-out group-hover:translate-x-1">
+                    <span className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-champagne transition-all duration-200 ease-out group-hover:translate-x-1">
                       {t('col.explore')} <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </span>
                   </div>

@@ -32,12 +32,12 @@ export default function InstagramSection() {
         {tiles.map((n, idx) => (
           <li key={n}>
             <motion.div
-              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.96 }}
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.98 }}
               whileInView={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
               viewport={VIEWPORT_CONFIG}
               transition={{
-                duration: 0.6,
-                delay: idx * 0.06,
+                duration: 0.45,
+                delay: idx * 0.05,
                 ease: EASING.default,
               }}
             >
@@ -48,16 +48,16 @@ export default function InstagramSection() {
                 aria-label={`${t('ig.cta')} (${n})`}
                 className="group relative block aspect-square overflow-hidden rounded-card focus-visible:outline-gold"
               >
-                <div className="h-full w-full transition-transform duration-500 ease-out group-hover:scale-[1.06]">
+                <div className="h-full w-full transition-transform duration-300 ease-out group-hover:scale-[1.03]">
                   <ImageSlot imageKey={`insta-${n}`} alt={`Vaagai ${n}`} />
                 </div>
 
                 {/* Burgundy 40% overlay with centered Instagram icon */}
                 <div
-                  className="pointer-events-none absolute inset-0 flex items-center justify-center bg-burgundy/40 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                  className="pointer-events-none absolute inset-0 flex items-center justify-center bg-burgundy/40 opacity-0 transition-opacity duration-180 group-hover:opacity-100"
                   aria-hidden="true"
                 >
-                  <Instagram className="h-6 w-6 text-white transition-transform duration-200 group-hover:scale-110" aria-hidden="true" />
+                  <Instagram className="h-6 w-6 text-white transition-transform duration-180 group-hover:scale-105" aria-hidden="true" />
                 </div>
               </a>
             </motion.div>

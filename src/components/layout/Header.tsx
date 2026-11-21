@@ -42,9 +42,9 @@ export default function Header() {
   const submit = (e: FormEvent) => { e.preventDefault(); notify(t('soon')) }
 
   return (
-    <header className={`sticky top-0 z-40 border-b border-sand bg-white/95 backdrop-blur transition-shadow duration-250 ${scrolled ? 'shadow-sm' : ''}`}>
-      <div className={`mx-auto flex max-w-site items-center gap-4 px-4 sm:px-6 lg:px-8 transition-[height] duration-250 ease-out ${scrolled ? 'h-14 lg:h-[3.75rem]' : 'h-16 lg:h-[4.5rem]'}`}>
-        <a href="#home" aria-label="Vaagai Metals Traders" className={`shrink-0 origin-left transition-transform duration-250 ease-out ${scrolled ? 'scale-90' : 'scale-100'}`}>
+    <header className={`sticky top-0 z-40 border-b border-sand bg-white/95 backdrop-blur transition-shadow duration-200 ${scrolled ? 'shadow-sm' : ''}`}>
+      <div className={`mx-auto flex max-w-site items-center gap-4 px-4 sm:px-6 lg:px-8 transition-[height] duration-200 ease-out ${scrolled ? 'h-14 lg:h-[3.75rem]' : 'h-16 lg:h-[4.5rem]'}`}>
+        <a href="#home" aria-label="Vaagai Metals Traders" className={`shrink-0 origin-left transition-transform duration-200 ease-out ${scrolled ? 'scale-90' : 'scale-100'}`}>
           <LogoImage className="h-10 lg:h-12" />
         </a>
 
@@ -66,7 +66,7 @@ export default function Header() {
                       <motion.span
                         layoutId="active-nav-indicator"
                         className="absolute bottom-0 left-3.5 right-3.5 h-[2px] rounded-full bg-gold"
-                        transition={{ duration: 0.3, ease: EASING.default }}
+                        transition={{ duration: 0.25, ease: EASING.default }}
                       />
                     )}
                   </a>

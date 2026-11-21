@@ -11,7 +11,7 @@ const containerVariants = {
   open: {
     transition: {
       staggerChildren: 0.05,
-      delayChildren: 0.12,
+      delayChildren: 0.1,
     },
   },
   closed: {
@@ -26,12 +26,12 @@ const itemVariants = {
   open: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.25, ease: EASING.default },
+    transition: { duration: 0.22, ease: EASING.default },
   },
   closed: {
     opacity: 0,
-    x: 14,
-    transition: { duration: 0.18, ease: 'easeIn' as const },
+    x: 10,
+    transition: { duration: 0.15, ease: 'easeIn' as const },
   },
 }
 
@@ -74,7 +74,7 @@ export default function MobileMenu({ open, onClose, active }: { open: boolean; o
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%', transition: { duration: 0.2, ease: [0.32, 0, 0.67, 0] as const } }}
-            transition={{ type: 'spring', damping: 30, stiffness: 280 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
             className="absolute right-0 top-0 flex h-full w-[86%] max-w-sm flex-col bg-white shadow-xl"
           >
             <div className="flex items-center justify-between border-b border-sand p-4">
