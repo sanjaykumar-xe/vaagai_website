@@ -11,20 +11,16 @@ export default function StoreExperienceVideo() {
   const videoRef = useRef<HTMLVideoElement>(null)
 
   const [isPlaying, setIsPlaying] = useState(false)
-  const [isMuted, setIsMuted] = useState(true)
+  const [isMuted, setIsMuted] = useState(false)
   const [manualPaused, setManualPaused] = useState(false)
   const [isEnded, setIsEnded] = useState(false)
   const [hasError, setHasError] = useState(false)
 
-  // IntersectionObserver: automatically start playback when scrolling into view (~15%+ visible); pause when scrolled away
+  // IntersectionObserver: automatically start playback unmuted when scrolling into view (~15%+ visible); pause when scrolled away
   useEffect(() => {
     const video = videoRef.current
     const container = containerRef.current
     if (!video || !container) return
-
-    // Ensure DOM properties are explicitly set for browser autoplay permission
-    video.muted = isMuted
-    video.defaultMuted = true
 
     const observer = new IntersectionObserver(
       entries => {
@@ -34,18 +30,35 @@ export default function StoreExperienceVideo() {
           if (isVisible) {
             // Autoplay only if visitor hasn't manually paused and video hasn't finished
             if (!manualPaused && !isEnded) {
-              video.muted = isMuted
+              video.muted = false
+              setIsMuted(false)
+
               const playPromise = video.play()
               if (playPromise !== undefined) {
                 playPromise
-                  .then(() => setIsPlaying(true))
+                  .then(() => {
+                    setIsPlaying(true)
+                    video.muted = false
+                    setIsMuted(false)
+                  })
                   .catch(() => {
-                    // Fallback retry with explicit mute in case browser policy requires it
+                    // If browser autoplay policy requires user gesture for audio, start muted first
                     video.muted = true
                     setIsMuted(true)
                     video.play()
                       .then(() => setIsPlaying(true))
                       .catch(() => setIsPlaying(false))
+
+                    // Immediately unmute on the next user scroll/gesture
+                    const gestureEvents = ['scroll', 'wheel', 'touchstart', 'pointerdown', 'click', 'keydown']
+                    const unmuteOnGesture = () => {
+                      if (videoRef.current) {
+                        videoRef.current.muted = false
+                        setIsMuted(false)
+                      }
+                      gestureEvents.forEach(evt => window.removeEventListener(evt, unmuteOnGesture))
+                    }
+                    gestureEvents.forEach(evt => window.addEventListener(evt, unmuteOnGesture, { once: true, passive: true }))
                   })
               }
             }
@@ -67,7 +80,7 @@ export default function StoreExperienceVideo() {
 
     observer.observe(container)
     return () => observer.disconnect()
-  }, [manualPaused, isEnded, isMuted])
+  }, [manualPaused, isEnded])
 
   const togglePlay = () => {
     const video = videoRef.current
@@ -99,6 +112,8 @@ export default function StoreExperienceVideo() {
     const video = videoRef.current
     if (!video) return
     video.currentTime = 0
+    video.muted = false
+    setIsMuted(false)
     const playPromise = video.play()
     if (playPromise !== undefined) {
       playPromise
