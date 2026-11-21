@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pause, Play, RotateCcw, Volume2, VolumeX } from 'lucide-react'
-import { motion, useReducedMotion } from 'motion/react'
+import { motion } from 'motion/react'
 import { useLang } from '../../i18n/LanguageContext'
 import Reveal from '../common/Reveal'
 
 export default function StoreExperienceVideo() {
   const { lang, t } = useLang()
-  const shouldReduceMotion = useReducedMotion()
 
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -17,49 +16,58 @@ export default function StoreExperienceVideo() {
   const [isEnded, setIsEnded] = useState(false)
   const [hasError, setHasError] = useState(false)
 
-  // IntersectionObserver: automatically start playback when ~45% visible; pause when scrolled away
+  // IntersectionObserver: automatically start playback when scrolling into view (~15%+ visible); pause when scrolled away
   useEffect(() => {
     const video = videoRef.current
     const container = containerRef.current
     if (!video || !container) return
 
+    // Ensure DOM properties are explicitly set for browser autoplay permission
+    video.muted = isMuted
+    video.defaultMuted = true
+
     const observer = new IntersectionObserver(
       entries => {
         entries.forEach(entry => {
-          const isVisible = entry.intersectionRatio >= 0.45
+          const isVisible = entry.isIntersecting && entry.intersectionRatio >= 0.15
 
           if (isVisible) {
-            // Autoplay only if visitor hasn't manually paused, video hasn't finished, and reduced motion is off
-            if (!manualPaused && !isEnded && !shouldReduceMotion) {
+            // Autoplay only if visitor hasn't manually paused and video hasn't finished
+            if (!manualPaused && !isEnded) {
+              video.muted = isMuted
               const playPromise = video.play()
               if (playPromise !== undefined) {
                 playPromise
                   .then(() => setIsPlaying(true))
                   .catch(() => {
-                    // Browser autoplay policy caught; keep muted & paused
-                    setIsPlaying(false)
+                    // Fallback retry with explicit mute in case browser policy requires it
+                    video.muted = true
+                    setIsMuted(true)
+                    video.play()
+                      .then(() => setIsPlaying(true))
+                      .catch(() => setIsPlaying(false))
                   })
               }
             }
-          } else {
+          } else if (!entry.isIntersecting || entry.intersectionRatio < 0.1) {
             // Visitor scrolled away: pause playback
             if (!video.paused) {
               video.pause()
               setIsPlaying(false)
             }
-            // Reset manualPaused so returning to section resumes playback
+            // Reset manualPaused so returning to section resumes playback automatically
             setManualPaused(false)
           }
         })
       },
       {
-        threshold: [0, 0.45],
+        threshold: [0, 0.15, 0.3, 0.5],
       },
     )
 
     observer.observe(container)
     return () => observer.disconnect()
-  }, [manualPaused, isEnded, shouldReduceMotion])
+  }, [manualPaused, isEnded, isMuted])
 
   const togglePlay = () => {
     const video = videoRef.current
@@ -146,7 +154,7 @@ export default function StoreExperienceVideo() {
                 src="/videos/vaagai-store-tour.mp4"
                 muted={isMuted}
                 playsInline
-                preload="metadata"
+                preload="auto"
                 onError={() => setHasError(true)}
                 onPlay={() => {
                   setIsPlaying(true)
