@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
+import type { Database } from '../types/database.types'
 
 /**
  * Validate and read Supabase environment variables.
@@ -28,7 +29,7 @@ if (!supabasePublishableKey) {
  * Singleton Supabase Client instance for Vaagai Metals Traders.
  * Configured for client-side authentication, database queries, and storage.
  */
-export const supabase: SupabaseClient = createClient(
+export const supabase: SupabaseClient<Database> = createClient<Database>(
   supabaseUrl,
   supabasePublishableKey,
   {
