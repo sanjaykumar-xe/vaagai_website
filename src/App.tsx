@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { lazy, Suspense, useEffect } from 'react'
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { MotionConfig } from 'motion/react'
 import { LanguageProvider } from './i18n/LanguageContext'
 import { ToastProvider } from './components/common/Toast'
@@ -21,6 +21,37 @@ function AdminFallback() {
   )
 }
 
+/**
+ * App-level authentication callback interceptor.
+ * Safely redirects Supabase invitation, recovery, and error callbacks
+ * arriving at the root '/' or non-admin routes into '/admin/reset-password'
+ * while preserving callback hash parameters, preventing redirect loops,
+ * and never interfering with normal storefront navigation or page anchors.
+ */
+function AuthCallbackHandler() {
+  const location = useLocation()
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (location.pathname !== '/admin/reset-password') {
+      const hash = window.location.hash
+      if (!hash) return
+
+      const isAuthCallback =
+        hash.includes('type=invite') ||
+        hash.includes('type=recovery') ||
+        hash.includes('error=') ||
+        hash.includes('error_code=')
+
+      if (isAuthCallback) {
+        navigate(`/admin/reset-password${hash}`, { replace: true })
+      }
+    }
+  }, [location.pathname, navigate])
+
+  return null
+}
+
 export default function App() {
   return (
     <MotionConfig reducedMotion="user">
@@ -28,6 +59,7 @@ export default function App() {
         <ToastProvider>
           <AuthProvider>
             <BrowserRouter>
+              <AuthCallbackHandler />
               <Routes>
                 {/* 1. Public Storefront (Existing Homepage — 100% untouched) */}
                 <Route path="/" element={<HomePage />} />

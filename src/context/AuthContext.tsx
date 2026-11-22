@@ -4,6 +4,7 @@ import {
   useEffect,
   useState,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react'
 import type { User, Session, AuthError } from '@supabase/supabase-js'
@@ -32,13 +33,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Request generation counter to prevent race conditions and stale role application
+  const roleCheckGen = useRef<number>(0)
+
   const clearError = useCallback(() => setError(null), [])
 
   /**
    * Asynchronous administrator privilege verification against Supabase RPC.
    * Kept separate from onAuthStateChange callback to prevent auth deadlocks.
+   * Guaranteed fail-closed and immune to stale asynchronous results.
    */
   const checkAdminRole = useCallback(async (userId?: string): Promise<boolean> => {
+    const currentGen = ++roleCheckGen.current
+
     if (!userId) {
       setIsAdmin(false)
       return false
@@ -47,6 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Query authoritative public.is_admin() RPC function
       const { data, error: rpcError } = await supabase.rpc('is_admin')
+
+      // Discard stale responses if user signed out, switched accounts, or a newer check started
+      if (roleCheckGen.current !== currentGen) {
+        return false
+      }
 
       if (rpcError) {
         console.error('[Auth] Failed to verify administrator role:', rpcError.message)
@@ -58,8 +70,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsAdmin(verified)
       return verified
     } catch (err) {
-      console.error('[Auth] Unexpected error during role verification:', err)
-      setIsAdmin(false)
+      if (roleCheckGen.current === currentGen) {
+        console.error('[Auth] Unexpected error during role verification:', err)
+        setIsAdmin(false)
+      }
       return false
     }
   }, [])
@@ -121,6 +135,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(newSession?.user ?? null)
 
         if (event === 'SIGNED_OUT' || !newSession) {
+          // Invalidate pending async checks
+          roleCheckGen.current++
           setIsAdmin(false)
           setIsLoading(false)
           setError(null)
@@ -187,6 +203,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
    * Sign out current user and clear authorization state
    */
   const signOut = async (): Promise<void> => {
+    // Invalidate in-flight role checks immediately
+    roleCheckGen.current++
     setIsLoading(true)
     try {
       await supabase.auth.signOut()

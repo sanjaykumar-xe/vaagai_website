@@ -1,33 +1,70 @@
 import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { KeyRound, Mail, ArrowLeft, AlertCircle, CheckCircle2, Loader2, Eye, EyeOff } from 'lucide-react'
+import { KeyRound, Mail, ArrowLeft, AlertCircle, CheckCircle2, Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import LogoImage from '../../components/common/LogoImage'
 import Button from '../../components/common/Button'
 
 export default function AdminResetPasswordPage() {
-  const { resetPasswordForEmail, updatePassword } = useAuth()
+  const { resetPasswordForEmail, updatePassword, refreshAdminStatus } = useAuth()
   const navigate = useNavigate()
 
-  // Detect whether visitor landed here from an email recovery link (#access_token=... or session recovery)
+  // Track authentication flow type: 'invite' | 'recovery' | 'request'
+  const [flowType, setFlowType] = useState<'invite' | 'recovery' | 'request'>('request')
   const [isRecoveryMode, setIsRecoveryMode] = useState(false)
   const [email, setEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [statusMessage, setStatusMessage] = useState<{
+    type: 'success' | 'error' | 'warning'
+    text: string
+  } | null>(null)
 
   useEffect(() => {
-    // Listen for recovery session or check URL hash
+    // 1. Inspect URL hash for Supabase callback parameters and errors
     const hash = window.location.hash
-    if (hash && (hash.includes('type=recovery') || hash.includes('access_token='))) {
-      setIsRecoveryMode(true)
+    if (hash) {
+      const cleanHash = hash.replace(/^#/, '')
+      const params = new URLSearchParams(cleanHash)
+
+      const error = params.get('error')
+      const errorCode = params.get('error_code')
+      const errorDescription = params.get('error_description')
+      const type = params.get('type')
+      const hasAccessToken = Boolean(params.get('access_token'))
+
+      if (error || errorCode) {
+        if (errorCode === 'otp_expired') {
+          setStatusMessage({
+            type: 'error',
+            text: 'This invitation or password recovery link is invalid or has expired. Please contact your primary administrator to resend the invitation, or request a password reset below.',
+          })
+        } else {
+          setStatusMessage({
+            type: 'error',
+            text: errorDescription
+              ? decodeURIComponent(errorDescription.replace(/\+/g, ' '))
+              : 'The authentication link could not be verified. Please try again.',
+          })
+        }
+        setIsRecoveryMode(false)
+        setFlowType('request')
+      } else if (type === 'invite') {
+        setFlowType('invite')
+        setIsRecoveryMode(true)
+      } else if (type === 'recovery' || hasAccessToken) {
+        setFlowType('recovery')
+        setIsRecoveryMode(true)
+      }
     }
 
+    // 2. Listen for Supabase password recovery event
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
+        setFlowType('recovery')
         setIsRecoveryMode(true)
       }
     })
@@ -65,7 +102,7 @@ export default function AdminResetPasswordPage() {
     }
   }
 
-  // Handler for setting a new password when in recovery mode
+  // Handler for setting a new password (both for invite setup and password recovery)
   const handleUpdatePassword = async (e: FormEvent) => {
     e.preventDefault()
     setStatusMessage(null)
@@ -85,13 +122,27 @@ export default function AdminResetPasswordPage() {
     setIsSubmitting(false)
 
     if (result.success) {
-      setStatusMessage({
-        type: 'success',
-        text: 'Your password has been successfully updated. Redirecting to administrator login...',
-      })
-      setTimeout(() => {
-        navigate('/admin/login', { replace: true })
-      }, 2500)
+      // Re-verify administrator role privileges against authoritative RPC
+      const isNowAdmin = await refreshAdminStatus()
+
+      if (isNowAdmin) {
+        setStatusMessage({
+          type: 'success',
+          text:
+            flowType === 'invite'
+              ? 'Your administrator password has been set successfully! Redirecting to the management portal...'
+              : 'Your password has been updated successfully! Redirecting to the management portal...',
+        })
+        setTimeout(() => {
+          navigate('/admin', { replace: true })
+        }, 1800)
+      } else {
+        // Password updated, but role is not yet elevated in public.user_roles
+        setStatusMessage({
+          type: 'warning',
+          text: 'Your password has been saved successfully, but this account has not yet been assigned administrator privileges in the database. Please contact the primary administrator to finalize your access in user_roles.',
+        })
+      }
     } else {
       setStatusMessage({
         type: 'error',
@@ -111,6 +162,12 @@ export default function AdminResetPasswordPage() {
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
           <span>Back to Admin Login</span>
         </Link>
+        {isRecoveryMode && flowType === 'invite' && (
+          <span className="inline-flex items-center gap-1 text-xs font-semibold uppercase tracking-wider text-burgundy">
+            <ShieldCheck className="h-3.5 w-3.5 text-gold" aria-hidden="true" />
+            <span>Invitation Setup</span>
+          </span>
+        )}
       </div>
 
       {/* Main card */}
@@ -122,10 +179,16 @@ export default function AdminResetPasswordPage() {
               <LogoImage className="h-10 brightness-0 invert" />
             </div>
             <h1 className="mt-3 font-serif text-xl font-semibold text-white">
-              {isRecoveryMode ? 'Set New Password' : 'Password Recovery'}
+              {isRecoveryMode
+                ? flowType === 'invite'
+                  ? 'Set Your Administrator Password'
+                  : 'Reset Your Password'
+                : 'Password Recovery'}
             </h1>
             <p className="mt-1 text-xs text-champagne/90">
-              Vaagai Metals Traders Secure Password Reset
+              {isRecoveryMode && flowType === 'invite'
+                ? 'Vaagai Metals Traders — Administrator Portal Setup'
+                : 'Vaagai Metals Traders Secure Password Reset'}
             </p>
           </div>
 
@@ -136,13 +199,20 @@ export default function AdminResetPasswordPage() {
                 className={`mb-6 flex items-start gap-3 rounded-control border p-3.5 text-xs sm:text-sm leading-relaxed ${
                   statusMessage.type === 'success'
                     ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                    : statusMessage.type === 'warning'
+                    ? 'border-amber-200 bg-amber-50 text-amber-900'
                     : 'border-red-200 bg-red-50 text-red-800'
                 }`}
               >
                 {statusMessage.type === 'success' ? (
                   <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" aria-hidden="true" />
                 ) : (
-                  <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-red-600" aria-hidden="true" />
+                  <AlertCircle
+                    className={`mt-0.5 h-5 w-5 shrink-0 ${
+                      statusMessage.type === 'warning' ? 'text-amber-600' : 'text-red-600'
+                    }`}
+                    aria-hidden="true"
+                  />
                 )}
                 <p>{statusMessage.text}</p>
               </div>
@@ -197,10 +267,12 @@ export default function AdminResetPasswordPage() {
                 </div>
               </form>
             ) : (
-              // Mode B: Set New Password
+              // Mode B: Set New Password (for Invitation or Recovery)
               <form onSubmit={handleUpdatePassword} className="space-y-4" noValidate>
                 <p className="text-xs text-charcoal/80 leading-relaxed">
-                  Enter and confirm your new administrator password.
+                  {flowType === 'invite'
+                    ? 'Welcome to Vaagai Metals Traders. Create a strong password (minimum 8 characters) to access the administrator portal.'
+                    : 'Enter and confirm your new administrator password (minimum 8 characters).'}
                 </p>
 
                 <div>
@@ -228,6 +300,7 @@ export default function AdminResetPasswordPage() {
                       type="button"
                       onClick={() => setShowPassword((p) => !p)}
                       className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted hover:text-charcoal"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
@@ -267,13 +340,26 @@ export default function AdminResetPasswordPage() {
                     {isSubmitting ? (
                       <span className="flex items-center justify-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Updating Password...</span>
+                        <span>Saving Password...</span>
                       </span>
                     ) : (
-                      <span>Save New Password</span>
+                      <span>{flowType === 'invite' ? 'Set Password & Continue' : 'Save New Password'}</span>
                     )}
                   </Button>
                 </div>
+
+                {statusMessage?.type === 'warning' && (
+                  <div className="pt-2">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => navigate('/admin/login')}
+                      className="w-full justify-center"
+                    >
+                      <span>Proceed to Admin Login</span>
+                    </Button>
+                  </div>
+                )}
               </form>
             )}
           </div>

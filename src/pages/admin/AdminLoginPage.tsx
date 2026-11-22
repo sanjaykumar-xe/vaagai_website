@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { Lock, Mail, Eye, EyeOff, AlertCircle, ArrowLeft, Loader2 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -16,11 +16,16 @@ export default function AdminLoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [localError, setLocalError] = useState<string | null>(null)
 
-  // Redirect if already authenticated as admin
+  // Only redirect if authenticated AND verified as admin.
+  // Authenticated non-admin accounts remain on the login page (or return to storefront)
+  // and are never automatically redirected into /admin.
   const destination = (location.state as { from?: { pathname?: string } })?.from?.pathname || '/admin'
-  if (user && isAdmin) {
-    navigate(destination, { replace: true })
-  }
+
+  useEffect(() => {
+    if (user && isAdmin && !authLoading) {
+      navigate(destination, { replace: true })
+    }
+  }, [user, isAdmin, authLoading, navigate, destination])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
