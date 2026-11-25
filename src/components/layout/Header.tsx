@@ -4,6 +4,7 @@ import { Menu, Search, ShoppingBag, User, X } from 'lucide-react'
 import { motion, useScroll } from 'motion/react'
 import { NAV } from '../../data/site'
 import { useLang } from '../../i18n/LanguageContext'
+import { useQuoteCart } from '../../context/QuoteCartContext'
 import { EASING } from '../../lib/motion'
 import { useToast } from '../common/Toast'
 import LanguageSwitcher from '../common/LanguageSwitcher'
@@ -30,6 +31,7 @@ const iconBtn = 'grid h-11 w-11 place-items-center rounded-control text-charcoal
 
 export default function Header() {
   const { t } = useLang()
+  const { totalUnits } = useQuoteCart()
   const notify = useToast()
   const location = useLocation()
   const navigate = useNavigate()
@@ -148,15 +150,19 @@ export default function Header() {
           >
             <User className="h-5 w-5" aria-hidden />
           </button>
-          <button
-            type="button"
-            className={iconBtn}
-            aria-label={t('a11y.cart')}
-            title={t('a11y.cart')}
-            onClick={() => notify(t('toast.quoteCartSoon'))}
+          <Link
+            to="/quote"
+            className={`${iconBtn} relative`}
+            aria-label={`${t('quote.title')}${totalUnits > 0 ? ` (${totalUnits})` : ''}`}
+            title={t('quote.title')}
           >
             <ShoppingBag className="h-5 w-5" aria-hidden />
-          </button>
+            {totalUnits > 0 && (
+              <span className="absolute right-1 top-1 flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-burgundy px-1 text-[0.65rem] font-bold text-white">
+                {totalUnits > 99 ? '99+' : totalUnits}
+              </span>
+            )}
+          </Link>
 
           {/* Mobile Menu button */}
           <button

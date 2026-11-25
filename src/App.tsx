@@ -4,9 +4,13 @@ import { MotionConfig } from 'motion/react'
 import { LanguageProvider } from './i18n/LanguageContext'
 import { ToastProvider } from './components/common/Toast'
 import { AuthProvider } from './context/AuthContext'
+import { QuoteCartProvider } from './context/QuoteCartContext'
 import HomePage from './pages/HomePage'
 import ShopPage from './pages/ShopPage'
 import ProductDetailPage from './pages/ProductDetailPage'
+import QuoteCartPage from './pages/QuoteCartPage'
+import QuoteRequestPage from './pages/QuoteRequestPage'
+import QuoteSuccessPage from './pages/QuoteSuccessPage'
 import NotFoundPage from './pages/NotFoundPage'
 import ProtectedRoute from './components/admin/ProtectedRoute'
 import AdminLayout from './components/admin/AdminLayout'
@@ -64,13 +68,17 @@ export default function App() {
       <LanguageProvider>
         <ToastProvider>
           <AuthProvider>
-            <BrowserRouter>
-              <AuthCallbackHandler />
-              <Routes>
-                {/* 1. Public Storefront */}
-                <Route path="/" element={<HomePage />} />
-                <Route path="/shop" element={<ShopPage />} />
-                <Route path="/products/:slug" element={<ProductDetailPage />} />
+            <QuoteCartProvider>
+              <BrowserRouter>
+                <AuthCallbackHandler />
+                <Routes>
+                  {/* 1. Public Storefront */}
+                  <Route path="/" element={<HomePage />} />
+                  <Route path="/shop" element={<ShopPage />} />
+                  <Route path="/products/:slug" element={<ProductDetailPage />} />
+                  <Route path="/quote" element={<QuoteCartPage />} />
+                  <Route path="/quote/request" element={<QuoteRequestPage />} />
+                  <Route path="/quote/success" element={<QuoteSuccessPage />} />
 
                 {/* 2. Public Admin Authentication Routes */}
                 <Route
@@ -138,7 +146,8 @@ export default function App() {
                 {/* 4. Global 404 Not Found */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
-            </BrowserRouter>
+              </BrowserRouter>
+            </QuoteCartProvider>
           </AuthProvider>
         </ToastProvider>
       </LanguageProvider>

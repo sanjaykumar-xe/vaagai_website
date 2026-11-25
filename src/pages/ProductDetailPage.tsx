@@ -7,10 +7,15 @@ import {
   Compass,
   ImageIcon,
   MessageCircle,
+  Minus,
   PhoneCall,
+  Plus,
+  ShoppingBag,
 } from 'lucide-react'
 import { SITE } from '../data/site'
 import { useLang } from '../i18n/LanguageContext'
+import { useQuoteCart } from '../context/QuoteCartContext'
+import { useToast } from '../components/common/Toast'
 import { fetchPublicCatalog, fetchPublicProductBySlug } from '../services/storefront'
 import type { StorefrontProduct, StorefrontVariant } from '../types/storefront'
 import { LOW_STOCK_DEFAULT_THRESHOLD } from '../types/product'
@@ -69,6 +74,8 @@ function DetailSkeleton() {
 export default function ProductDetailPage() {
   const { slug } = useParams<{ slug: string }>()
   const { lang, t } = useLang()
+  const { addItem } = useQuoteCart()
+  const notify = useToast()
   const navigate = useNavigate()
 
   const [product, setProduct] = useState<StorefrontProduct | null>(null)
@@ -79,6 +86,8 @@ export default function ProductDetailPage() {
   const [selectedImageIdx, setSelectedImageIdx] = useState(0)
   const [failedImageIds, setFailedImageIds] = useState<Set<string>>(new Set())
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null)
+  const [quantity, setQuantity] = useState(1)
+  const [addedToQuote, setAddedToQuote] = useState(false)
 
   const loadProduct = useCallback(
     async (isActiveRef?: { current: boolean }) => {
@@ -153,10 +162,34 @@ export default function ProductDetailPage() {
 
   const selectedVariant = useMemo(() => {
     if (!product || product.variants.length === 0) return null
+    if (product.pricing_type === 'fixed') {
+      return (
+        product.variants.find((v) => v.variant_sku === `${product.sku}-STD`) ||
+        product.variants.find((v) => v.variant_name_en === 'Standard') ||
+        product.variants[0]
+      )
+    }
     return product.variants.find((v) => v.id === selectedVariantId) || product.variants[0]
   }, [product, selectedVariantId])
 
   const activeImage = product?.images[selectedImageIdx] || null
+
+  const canAddToQuote = useMemo(() => {
+    if (!product) return false
+    if (product.pricing_type === 'variant') {
+      return Boolean(selectedVariant && selectedVariant.stock_quantity > 0)
+    }
+    return true
+  }, [product, selectedVariant])
+
+  const handleAddToQuote = () => {
+    if (!product || !canAddToQuote) return
+    const variantIdForCart =
+      product.pricing_type === 'enquiry' ? null : selectedVariant?.id ?? null
+    addItem(product.id, variantIdForCart, quantity)
+    setAddedToQuote(true)
+    notify(t('prod.addedToQuote'))
+  }
 
   const renderStockBadge = () => {
     if (!product) return null
@@ -180,7 +213,7 @@ export default function ProductDetailPage() {
     const stockQty =
       product.pricing_type === 'variant'
         ? selectedVariant?.stock_quantity ?? 0
-        : product.variants[0]?.stock_quantity ?? 0
+        : selectedVariant?.stock_quantity ?? 0
 
     if (stockQty <= 0) {
       return (
@@ -555,10 +588,68 @@ export default function ProductDetailPage() {
                     </dl>
                   </div>
 
-                  {/* Direct Quotation / WhatsApp Enquiry CTA */}
-                  <div className="pt-2">
+                  {/* Quantity & Add to Quote / Direct Enquiry CTA */}
+                  <div className="space-y-3 pt-2">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                      <div className="inline-flex items-center justify-between rounded-control border border-sand bg-white px-2 py-1 sm:w-36">
+                        <span className="sr-only">{t('prod.qty')}</span>
+                        <button
+                          type="button"
+                          onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                          aria-label="Decrease quantity"
+                          className="grid h-9 w-9 place-items-center rounded text-charcoal hover:bg-ivory"
+                        >
+                          <Minus className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                        <input
+                          type="number"
+                          min={1}
+                          max={999}
+                          aria-label={t('prod.qty')}
+                          value={quantity}
+                          onChange={(e) => {
+                            const val = parseInt(e.target.value, 10)
+                            if (Number.isFinite(val)) {
+                              setQuantity(Math.min(999, Math.max(1, val)))
+                            }
+                          }}
+                          className="w-12 bg-transparent text-center text-sm font-semibold text-charcoal focus:outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setQuantity((q) => Math.min(999, q + 1))}
+                          aria-label="Increase quantity"
+                          className="grid h-9 w-9 place-items-center rounded text-charcoal hover:bg-ivory"
+                        >
+                          <Plus className="h-4 w-4" aria-hidden="true" />
+                        </button>
+                      </div>
+
+                      <Button
+                        disabled={!canAddToQuote}
+                        onClick={handleAddToQuote}
+                        className="flex-1 justify-center disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <ShoppingBag className="h-4 w-4" aria-hidden="true" />
+                        <span>{t('prod.addToQuote')}</span>
+                      </Button>
+                    </div>
+
+                    {addedToQuote && (
+                      <div className="flex items-center justify-between rounded-control border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-xs text-emerald-900">
+                        <span>{t('prod.addedToQuote')}</span>
+                        <Link
+                          to="/quote"
+                          className="font-semibold text-burgundy underline hover:text-wine"
+                        >
+                          {t('prod.viewQuote')}
+                        </Link>
+                      </div>
+                    )}
+
                     {SITE.whatsappUrl ? (
                       <Button
+                        variant="secondary"
                         href={buildWhatsAppEnquiryUrl(SITE.whatsappUrl, product, selectedVariant)}
                         target="_blank"
                         rel="noopener noreferrer"
@@ -569,6 +660,7 @@ export default function ProductDetailPage() {
                       </Button>
                     ) : (
                       <Button
+                        variant="secondary"
                         onClick={() => navigate('/#contact')}
                         className="w-full justify-center"
                       >

@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react'
-import { X } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { ShoppingBag, X } from 'lucide-react'
 import { motion, AnimatePresence } from 'motion/react'
 import { NAV } from '../../data/site'
 import { useLang } from '../../i18n/LanguageContext'
+import { useQuoteCart } from '../../context/QuoteCartContext'
 import { EASING } from '../../lib/motion'
 import LanguageSwitcher from '../common/LanguageSwitcher'
 import LogoImage from '../common/LogoImage'
@@ -47,6 +49,7 @@ export default function MobileMenu({
   onSelectNav: (id: string) => void
 }) {
   const { t } = useLang()
+  const { totalUnits } = useQuoteCart()
   const closeRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
@@ -126,6 +129,23 @@ export default function MobileMenu({
                   </motion.li>
                 )
               })}
+              <motion.li variants={itemVariants}>
+                <Link
+                  to="/quote"
+                  onClick={onClose}
+                  className="flex items-center justify-between rounded-control px-4 py-3.5 text-lg hover:bg-champagne/30"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 text-burgundy" aria-hidden="true" />
+                    <span>{t('quote.title')}</span>
+                  </span>
+                  {totalUnits > 0 && (
+                    <span className="rounded-full bg-burgundy px-2 py-0.5 text-xs font-semibold text-white">
+                      {totalUnits}
+                    </span>
+                  )}
+                </Link>
+              </motion.li>
             </motion.ul>
 
             <div className="border-t border-sand p-4">

@@ -11,6 +11,7 @@ import type {
   StorefrontProduct,
   StorefrontVariant,
 } from '../types/storefront'
+import type { QuoteCartItem } from '../context/QuoteCartContext'
 import { isValidSlug } from '../utils/formatters'
 
 const PRODUCT_IMAGES_BUCKET = 'product-images'
@@ -468,6 +469,167 @@ export async function fetchPublicProductBySlug(slug: string): Promise<Storefront
     if (err instanceof StorefrontServiceError) throw err
     throw new StorefrontServiceError(
       err instanceof Error ? err.message : 'Network error while loading product details.',
+    )
+  }
+}
+
+export interface RevalidatedQuoteLine {
+  cartItem: QuoteCartItem
+  product: StorefrontProduct
+  variant: StorefrontVariant | null
+  unitPricePaise: number | null
+}
+
+export interface QuoteCartRevalidationResult {
+  validLines: RevalidatedQuoteLine[]
+  unavailableItems: QuoteCartItem[]
+}
+
+/**
+ * Revalidate all guest quote cart items against live Supabase published products
+ * and active variants. Never trusts client-side cached prices or availability.
+ */
+export async function revalidateQuoteCartItems(
+  cartItems: QuoteCartItem[],
+): Promise<QuoteCartRevalidationResult> {
+  if (cartItems.length === 0) {
+    return { validLines: [], unavailableItems: [] }
+  }
+
+  try {
+    const productIds = Array.from(new Set(cartItems.map((i) => i.productId)))
+    const { data, error } = await supabase
+      .from('products')
+      .select(PUBLIC_PRODUCT_SELECT)
+      .eq('status', 'published')
+      .in('id', productIds)
+
+    if (error) {
+      handleQueryError(error, 'Unable to verify quote cart items.')
+    }
+
+    const byId = new Map<string, StorefrontProduct>()
+    for (const row of (data ?? []) as unknown as RawProductJoinRow[]) {
+      byId.set(row.id, mapProductRow(row))
+    }
+
+    const validLines: RevalidatedQuoteLine[] = []
+    const unavailableItems: QuoteCartItem[] = []
+
+    for (const item of cartItems) {
+      const product = byId.get(item.productId)
+      if (!product) {
+        unavailableItems.push(item)
+        continue
+      }
+
+      if (product.pricing_type === 'variant') {
+        if (!item.variantId) {
+          unavailableItems.push(item)
+          continue
+        }
+        const matchedVariant = product.variants.find((v) => v.id === item.variantId)
+        if (!matchedVariant) {
+          unavailableItems.push(item)
+          continue
+        }
+        validLines.push({
+          cartItem: item,
+          product,
+          variant: matchedVariant,
+          unitPricePaise: matchedVariant.price_paise,
+        })
+      } else if (product.pricing_type === 'fixed') {
+        const matchedVariant = item.variantId
+          ? product.variants.find((v) => v.id === item.variantId) ?? null
+          : product.variants.find((v) => v.variant_sku === `${product.sku}-STD`) ||
+            product.variants[0] ||
+            null
+
+        if (item.variantId && !matchedVariant) {
+          unavailableItems.push(item)
+          continue
+        }
+
+        validLines.push({
+          cartItem: item,
+          product,
+          variant: matchedVariant,
+          unitPricePaise: product.base_price_paise,
+        })
+      } else {
+        // Enquiry-only product
+        validLines.push({
+          cartItem: item,
+          product,
+          variant: null,
+          unitPricePaise: null,
+        })
+      }
+    }
+
+    return { validLines, unavailableItems }
+  } catch (err) {
+    if (err instanceof StorefrontServiceError) throw err
+    throw new StorefrontServiceError(
+      err instanceof Error ? err.message : 'Network error while verifying quote cart.',
+    )
+  }
+}
+
+export interface SubmitQuoteRequestInput {
+  customer_name: string
+  customer_phone: string
+  customer_email?: string
+  customer_location: string
+  additional_notes?: string
+  items: { product_id: string; variant_id: string | null; quantity: number }[]
+  website?: string
+}
+
+export interface SubmitQuoteRequestResponse {
+  reference_number: string
+  status: string
+  created_at: string
+}
+
+/**
+ * Submit a guest quotation request securely via the Supabase Edge Function.
+ */
+export async function submitQuoteRequest(
+  input: SubmitQuoteRequestInput,
+): Promise<SubmitQuoteRequestResponse> {
+  try {
+    const { data, error } = await supabase.functions.invoke('submit-quote-request', {
+      body: input,
+    })
+
+    if (error) {
+      let message = error.message || 'Unable to submit quotation request.'
+      try {
+        const ctx = (error as { context?: Response }).context
+        if (ctx && typeof ctx.json === 'function') {
+          const errBody = (await ctx.json()) as { error?: string }
+          if (errBody?.error) message = errBody.error
+        }
+      } catch {
+        // Use fallback error message
+      }
+      throw new StorefrontServiceError(message)
+    }
+
+    const res = data as SubmitQuoteRequestResponse | { error?: string } | null
+    if (!res || !('reference_number' in res)) {
+      throw new StorefrontServiceError(
+        (res && 'error' in res && res.error) || 'Quotation submission failed.',
+      )
+    }
+
+    return res
+  } catch (err) {
+    if (err instanceof StorefrontServiceError) throw err
+    throw new StorefrontServiceError(
+      err instanceof Error ? err.message : 'Network error while submitting quotation request.',
     )
   }
 }
