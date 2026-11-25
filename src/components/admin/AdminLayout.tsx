@@ -1,5 +1,5 @@
 import { Outlet, Link, NavLink } from 'react-router-dom'
-import { ShieldCheck, LogOut, ExternalLink, LayoutDashboard, Package } from 'lucide-react'
+import { ShieldCheck, LogOut, ExternalLink, LayoutDashboard, Package, Inbox } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import LogoImage from '../common/LogoImage'
 
@@ -39,6 +39,10 @@ export default function AdminLayout() {
               <NavLink to="/admin/products" className={navLinkClass}>
                 <Package className="h-3.5 w-3.5" aria-hidden="true" />
                 <span>Products</span>
+              </NavLink>
+              <NavLink to="/admin/quotes" className={navLinkClass}>
+                <Inbox className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Enquiries</span>
               </NavLink>
             </nav>
           </div>

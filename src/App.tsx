@@ -22,6 +22,8 @@ const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage')
 const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'))
 const AdminProductNewPage = lazy(() => import('./pages/admin/AdminProductNewPage'))
 const AdminProductEditPage = lazy(() => import('./pages/admin/AdminProductEditPage'))
+const AdminQuotesPage = lazy(() => import('./pages/admin/AdminQuotesPage'))
+const AdminQuoteDetailPage = lazy(() => import('./pages/admin/AdminQuoteDetailPage'))
 
 function AdminFallback() {
   return (
@@ -136,6 +138,22 @@ export default function App() {
                     element={
                       <Suspense fallback={<AdminFallback />}>
                         <AdminProductEditPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="quotes"
+                    element={
+                      <Suspense fallback={<AdminFallback />}>
+                        <AdminQuotesPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="quotes/:id"
+                    element={
+                      <Suspense fallback={<AdminFallback />}>
+                        <AdminQuoteDetailPage />
                       </Suspense>
                     }
                   />

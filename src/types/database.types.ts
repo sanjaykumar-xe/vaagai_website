@@ -10,6 +10,7 @@ export type UserRole = 'admin' | 'customer'
 export type PricingType = 'fixed' | 'variant' | 'enquiry'
 export type ProductStatus = 'draft' | 'published' | 'archived'
 export type PreferredLanguage = 'en' | 'ta'
+export type QuoteStatus = 'new' | 'contacted' | 'quoted' | 'accepted' | 'closed'
 
 export interface Database {
   public: {
@@ -340,6 +341,100 @@ export interface Database {
             foreignKeyName: 'audit_logs_actor_user_id_fkey'
             columns: ['actor_user_id']
             referencedRelation: 'users'
+            referencedColumns: ['id']
+          },
+        ]
+      }
+      quote_requests: {
+        Row: {
+          id: string
+          reference_number: string
+          customer_name: string
+          customer_phone: string
+          customer_email: string | null
+          customer_location: string
+          additional_notes: string | null
+          admin_notes: string | null
+          customer_id: string | null
+          status: QuoteStatus
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          reference_number: string
+          customer_name: string
+          customer_phone: string
+          customer_email?: string | null
+          customer_location: string
+          additional_notes?: string | null
+          admin_notes?: string | null
+          customer_id?: string | null
+          status?: QuoteStatus
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          reference_number?: string
+          customer_name?: string
+          customer_phone?: string
+          customer_email?: string | null
+          customer_location?: string
+          additional_notes?: string | null
+          admin_notes?: string | null
+          customer_id?: string | null
+          status?: QuoteStatus
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      quote_request_items: {
+        Row: {
+          id: string
+          quote_request_id: string
+          product_id: string | null
+          variant_id: string | null
+          product_name_en_snapshot: string
+          product_name_ta_snapshot: string
+          product_sku_snapshot: string
+          variant_name_snapshot: string | null
+          quantity: number
+          unit_price_paise_snapshot: number | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          quote_request_id: string
+          product_id?: string | null
+          variant_id?: string | null
+          product_name_en_snapshot: string
+          product_name_ta_snapshot: string
+          product_sku_snapshot: string
+          variant_name_snapshot?: string | null
+          quantity: number
+          unit_price_paise_snapshot?: number | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          quote_request_id?: string
+          product_id?: string | null
+          variant_id?: string | null
+          product_name_en_snapshot?: string
+          product_name_ta_snapshot?: string
+          product_sku_snapshot?: string
+          variant_name_snapshot?: string | null
+          quantity?: number
+          unit_price_paise_snapshot?: number | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'quote_request_items_quote_request_id_fkey'
+            columns: ['quote_request_id']
+            referencedRelation: 'quote_requests'
             referencedColumns: ['id']
           },
         ]
