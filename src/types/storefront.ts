@@ -74,6 +74,7 @@ export interface PublicCatalogOptions {
   page?: number
   pageSize?: number
   categorySlug?: string
+  material?: string
   search?: string
   sort?: PublicCatalogSort
   featuredOnly?: boolean

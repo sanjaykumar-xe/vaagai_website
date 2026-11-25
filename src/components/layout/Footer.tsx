@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { Instagram } from 'lucide-react'
 import { motion } from 'motion/react'
 import { NAV, POLICY_LINKS, SITE } from '../../data/site'
@@ -38,7 +39,13 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               {NAV.map(n => (
                 <li key={n.id}>
-                  <a href={`#${n.id}`} className={link}>{t(n.key)}</a>
+                  {n.id === 'shop' ? (
+                    <Link to="/shop" className={link}>{t(n.key)}</Link>
+                  ) : n.id === 'home' ? (
+                    <Link to="/" className={link}>{t(n.key)}</Link>
+                  ) : (
+                    <a href={`/#${n.id}`} className={link}>{t(n.key)}</a>
+                  )}
                 </li>
               ))}
             </ul>
@@ -52,7 +59,7 @@ export default function Footer() {
             <ul className="space-y-2.5 text-sm">
               {categories.map(c => (
                 <li key={c.slug}>
-                  <button type="button" onClick={soon} className={btnLink}>{pick(c.name)}</button>
+                  <Link to={`/shop?category=${encodeURIComponent(c.slug)}`} className={link}>{pick(c.name)}</Link>
                 </li>
               ))}
             </ul>

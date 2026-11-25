@@ -247,7 +247,38 @@ export async function fetchFeaturedProducts(limit = 8): Promise<StorefrontProduc
 }
 
 /**
+ * Fetch distinct non-empty material values from published products.
+ */
+export async function fetchAvailableMaterials(): Promise<string[]> {
+  try {
+    const { data, error } = await supabase
+      .from('public_catalog_products')
+      .select('material')
+      .not('material', 'is', null)
+      .order('material', { ascending: true })
+
+    if (error) {
+      handleQueryError(error, 'Unable to load product materials.')
+    }
+
+    const unique = new Set<string>()
+    for (const row of data ?? []) {
+      const m = row.material?.trim()
+      if (m) unique.add(m)
+    }
+    return Array.from(unique)
+  } catch (err) {
+    if (err instanceof StorefrontServiceError) throw err
+    throw new StorefrontServiceError(
+      err instanceof Error ? err.message : 'Network error while loading materials.',
+    )
+  }
+}
+
+/**
  * Fetch paginated, filtered, and sorted published products for the public catalogue.
+ * Uses `public.public_catalog_products` (SECURITY INVOKER view) for accurate
+ * catalogue-wide sorting across fixed, variant, and enquiry pricing types.
  */
 export async function fetchPublicCatalog(
   options: PublicCatalogOptions = {},
@@ -298,60 +329,99 @@ export async function fetchPublicCatalog(
       categoryIdFilter = catData.id
     }
 
-    let query = supabase
-      .from('products')
-      .select(PUBLIC_PRODUCT_SELECT, { count: 'exact' })
-      .eq('status', 'published')
+    let viewQuery = supabase
+      .from('public_catalog_products')
+      .select('id', { count: 'exact' })
 
     if (categoryIdFilter) {
-      query = query.eq('category_id', categoryIdFilter)
+      viewQuery = viewQuery.eq('category_id', categoryIdFilter)
+    }
+
+    if (options.material && options.material !== 'all') {
+      viewQuery = viewQuery.ilike('material', options.material.trim())
     }
 
     if (options.featuredOnly) {
-      query = query.eq('is_featured', true)
+      viewQuery = viewQuery.eq('is_featured', true)
     }
 
     const trimmedSearch = options.search?.trim() || ''
     if (trimmedSearch) {
       const escaped = trimmedSearch.replace(/[%_]/g, '\\$&')
-      query = query.or(
+      viewQuery = viewQuery.or(
         `name_en.ilike.%${escaped}%,name_ta.ilike.%${escaped}%,description_en.ilike.%${escaped}%,description_ta.ilike.%${escaped}%,material.ilike.%${escaped}%`,
       )
     }
 
     switch (options.sort) {
       case 'name_asc':
-        query = query.order('name_en', { ascending: true })
+        viewQuery = viewQuery.order('name_en', { ascending: true })
         break
       case 'name_desc':
-        query = query.order('name_en', { ascending: false })
+        viewQuery = viewQuery.order('name_en', { ascending: false })
         break
       case 'price_asc':
-        query = query.order('base_price_paise', { ascending: true, nullsFirst: false })
+        viewQuery = viewQuery
+          .order('effective_price_paise', { ascending: true, nullsFirst: false })
+          .order('created_at', { ascending: false })
         break
       case 'price_desc':
-        query = query.order('base_price_paise', { ascending: false, nullsFirst: false })
+        viewQuery = viewQuery
+          .order('effective_price_paise', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false })
         break
       case 'newest':
       default:
-        query = query.order('created_at', { ascending: false })
+        viewQuery = viewQuery.order('created_at', { ascending: false })
         break
     }
 
     const from = (page - 1) * pageSize
     const to = from + pageSize - 1
-    query = query.range(from, to)
+    viewQuery = viewQuery.range(from, to)
 
-    const { data, count, error } = await query
-    if (error) {
-      handleQueryError(error, 'Unable to load product catalogue.')
+    const { data: idRows, count, error: viewError } = await viewQuery
+    if (viewError) {
+      handleQueryError(viewError, 'Unable to load product catalogue.')
     }
 
     const totalCount = count ?? 0
     const totalPages = Math.max(1, Math.ceil(totalCount / pageSize))
+    const orderedIds = (idRows ?? []).map((r) => r.id)
+
+    if (orderedIds.length === 0) {
+      return {
+        items: [],
+        totalCount,
+        page,
+        pageSize,
+        totalPages,
+        hasNextPage: page < totalPages,
+        hasPreviousPage: page > 1,
+      }
+    }
+
+    const { data: fullRows, error: joinError } = await supabase
+      .from('products')
+      .select(PUBLIC_PRODUCT_SELECT)
+      .eq('status', 'published')
+      .in('id', orderedIds)
+
+    if (joinError) {
+      handleQueryError(joinError, 'Unable to load product details.')
+    }
+
+    const mappedById = new Map<string, StorefrontProduct>()
+    for (const row of (fullRows ?? []) as unknown as RawProductJoinRow[]) {
+      mappedById.set(row.id, mapProductRow(row))
+    }
+
+    const orderedItems = orderedIds
+      .map((id) => mappedById.get(id))
+      .filter((item): item is StorefrontProduct => Boolean(item))
 
     return {
-      items: ((data ?? []) as unknown as RawProductJoinRow[]).map(mapProductRow),
+      items: orderedItems,
       totalCount,
       page,
       pageSize,

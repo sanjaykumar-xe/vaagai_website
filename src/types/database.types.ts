@@ -346,7 +346,28 @@ export interface Database {
       }
     }
     Views: {
-      [_ in never]: never
+      public_catalog_products: {
+        Row: {
+          id: string
+          category_id: string | null
+          slug: string
+          sku: string
+          name_en: string
+          name_ta: string
+          description_en: string | null
+          description_ta: string | null
+          material: string | null
+          pricing_type: PricingType
+          base_price_paise: number | null
+          compare_at_price_paise: number | null
+          status: ProductStatus
+          is_featured: boolean
+          created_at: string
+          updated_at: string
+          effective_price_paise: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       is_admin: {

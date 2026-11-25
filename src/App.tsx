@@ -5,6 +5,8 @@ import { LanguageProvider } from './i18n/LanguageContext'
 import { ToastProvider } from './components/common/Toast'
 import { AuthProvider } from './context/AuthContext'
 import HomePage from './pages/HomePage'
+import ShopPage from './pages/ShopPage'
+import NotFoundPage from './pages/NotFoundPage'
 import ProtectedRoute from './components/admin/ProtectedRoute'
 import AdminLayout from './components/admin/AdminLayout'
 
@@ -64,8 +66,9 @@ export default function App() {
             <BrowserRouter>
               <AuthCallbackHandler />
               <Routes>
-                {/* 1. Public Storefront (Existing Homepage — 100% untouched) */}
+                {/* 1. Public Storefront */}
                 <Route path="/" element={<HomePage />} />
+                <Route path="/shop" element={<ShopPage />} />
 
                 {/* 2. Public Admin Authentication Routes */}
                 <Route
@@ -130,8 +133,8 @@ export default function App() {
                   <Route path="*" element={<Navigate to="/admin" replace />} />
                 </Route>
 
-                {/* 4. Global Fallback */}
-                <Route path="*" element={<Navigate to="/" replace />} />
+                {/* 4. Global 404 Not Found */}
+                <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </BrowserRouter>
           </AuthProvider>

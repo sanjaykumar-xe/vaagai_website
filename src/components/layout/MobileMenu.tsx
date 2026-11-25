@@ -35,7 +35,17 @@ const itemVariants = {
   },
 }
 
-export default function MobileMenu({ open, onClose, active }: { open: boolean; onClose: () => void; active: string }) {
+export default function MobileMenu({
+  open,
+  onClose,
+  active,
+  onSelectNav,
+}: {
+  open: boolean
+  onClose: () => void
+  active: string
+  onSelectNav: (id: string) => void
+}) {
   const { t } = useLang()
   const closeRef = useRef<HTMLButtonElement>(null)
 
@@ -55,7 +65,6 @@ export default function MobileMenu({ open, onClose, active }: { open: boolean; o
     <AnimatePresence>
       {open && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          {/* Backdrop with 250ms fade */}
           <motion.div
             onClick={onClose}
             initial={{ opacity: 0 }}
@@ -66,7 +75,6 @@ export default function MobileMenu({ open, onClose, active }: { open: boolean; o
             aria-hidden="true"
           />
 
-          {/* Drawer with damped spring (no bounce), closing in 200ms */}
           <motion.nav
             role="dialog"
             aria-modal="true"
@@ -97,20 +105,27 @@ export default function MobileMenu({ open, onClose, active }: { open: boolean; o
               animate="open"
               exit="closed"
             >
-              {NAV.map(n => (
-                <motion.li key={n.id} variants={itemVariants}>
-                  <a
-                    href={`#${n.id}`}
-                    onClick={onClose}
-                    aria-current={active === n.id ? 'true' : undefined}
-                    className={`block rounded-control px-4 py-3.5 text-lg ${
-                      active === n.id ? 'bg-burgundy text-white' : 'hover:bg-champagne/30'
-                    }`}
-                  >
-                    {t(n.key)}
-                  </a>
-                </motion.li>
-              ))}
+              {NAV.map((n) => {
+                const href = n.id === 'shop' ? '/shop' : n.id === 'home' ? '/' : `/#${n.id}`
+                return (
+                  <motion.li key={n.id} variants={itemVariants}>
+                    <a
+                      href={href}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        onClose()
+                        onSelectNav(n.id)
+                      }}
+                      aria-current={active === n.id ? 'page' : undefined}
+                      className={`block rounded-control px-4 py-3.5 text-lg ${
+                        active === n.id ? 'bg-burgundy text-white' : 'hover:bg-champagne/30'
+                      }`}
+                    >
+                      {t(n.key)}
+                    </a>
+                  </motion.li>
+                )
+              })}
             </motion.ul>
 
             <div className="border-t border-sand p-4">
