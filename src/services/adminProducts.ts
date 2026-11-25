@@ -209,7 +209,7 @@ export async function fetchAdminProducts(
   if (trimmedSearch) {
     const escaped = trimmedSearch.replace(/[%_]/g, '\\$&')
     query = query.or(
-      `name_en.ilike.%${escaped}%,name_ta.ilike.%${escaped}%,sku.ilike.%${escaped}%,description_en.ilike.%${escaped}%`,
+      `name_en.ilike.%${escaped}%,name_ta.ilike.%${escaped}%,sku.ilike.%${escaped}%,description_en.ilike.%${escaped}%,description_ta.ilike.%${escaped}%`,
     )
   }
 
@@ -451,11 +451,15 @@ export async function updateProduct(
     throw new Error(translateDatabaseError(productError, 'Failed to update product.'))
   }
 
-  // Sync variants
-  const { data: existingVariants } = await supabase
+  // Sync variants cleanly across pricing_type transitions
+  const { data: existingVariants, error: existingVarErr } = await supabase
     .from('product_variants')
-    .select('id')
+    .select('id, variant_sku')
     .eq('product_id', productId)
+
+  if (existingVarErr) {
+    throw new Error(translateDatabaseError(existingVarErr, 'Failed to load existing product variants.'))
+  }
 
   const existingIds = new Set((existingVariants || []).map((v) => v.id))
 
@@ -488,16 +492,23 @@ export async function updateProduct(
 
     const toDeleteIds = [...existingIds].filter((id) => !keptIds.has(id))
     if (toDeleteIds.length > 0) {
-      await supabase.from('product_variants').delete().in('id', toDeleteIds)
+      const { error: delVarErr } = await supabase
+        .from('product_variants')
+        .delete()
+        .in('id', toDeleteIds)
+      if (delVarErr) throw new Error(translateDatabaseError(delVarErr))
     }
   } else if (values.pricing_type === 'fixed') {
     const stockQty = Math.max(0, parseInt(values.stock_quantity || '0', 10) || 0)
-    const firstExistingId = existingVariants?.[0]?.id
-    if (firstExistingId) {
+    const stdSku = `${values.sku.trim()}-STD`
+    const retainedVariant =
+      existingVariants?.find((v) => v.variant_sku === stdSku) ?? existingVariants?.[0]
+
+    if (retainedVariant) {
       const { error: updErr } = await supabase
         .from('product_variants')
         .update({
-          variant_sku: `${values.sku.trim()}-STD`,
+          variant_sku: stdSku,
           variant_name_en: 'Standard',
           variant_name_ta: 'நிலையானது',
           price_paise: basePricePaise ?? 0,
@@ -505,12 +516,21 @@ export async function updateProduct(
           stock_quantity: stockQty,
           is_active: true,
         })
-        .eq('id', firstExistingId)
+        .eq('id', retainedVariant.id)
       if (updErr) throw new Error(translateDatabaseError(updErr))
+
+      const extraIds = [...existingIds].filter((id) => id !== retainedVariant.id)
+      if (extraIds.length > 0) {
+        const { error: delExtraErr } = await supabase
+          .from('product_variants')
+          .delete()
+          .in('id', extraIds)
+        if (delExtraErr) throw new Error(translateDatabaseError(delExtraErr))
+      }
     } else {
       const { error: insErr } = await supabase.from('product_variants').insert({
         product_id: productId,
-        variant_sku: `${values.sku.trim()}-STD`,
+        variant_sku: stdSku,
         variant_name_en: 'Standard',
         variant_name_ta: 'நிலையானது',
         price_paise: basePricePaise ?? 0,
@@ -519,6 +539,15 @@ export async function updateProduct(
         is_active: true,
       })
       if (insErr) throw new Error(translateDatabaseError(insErr))
+    }
+  } else if (values.pricing_type === 'enquiry') {
+    // Remove obsolete variants when switching to enquiry-only pricing
+    if (existingIds.size > 0) {
+      const { error: delAllErr } = await supabase
+        .from('product_variants')
+        .delete()
+        .in('id', [...existingIds])
+      if (delAllErr) throw new Error(translateDatabaseError(delAllErr))
     }
   }
 

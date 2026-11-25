@@ -25,7 +25,6 @@ const INITIAL_FORM_VALUES: ProductFormValues = {
   base_price_rupees: '',
   compare_at_price_rupees: '',
   stock_quantity: '0',
-  low_stock_threshold: '5',
   status: 'draft',
   is_featured: false,
   variants: [],

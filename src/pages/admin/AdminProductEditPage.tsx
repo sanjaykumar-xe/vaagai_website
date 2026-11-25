@@ -36,7 +36,6 @@ function mapProductToFormValues(product: ProductWithDetails): ProductFormValues 
     base_price_rupees: paiseToRupeesInput(product.base_price_paise),
     compare_at_price_rupees: paiseToRupeesInput(product.compare_at_price_paise),
     stock_quantity: String(defaultVariant?.stock_quantity ?? 0),
-    low_stock_threshold: '5',
     status: product.status,
     is_featured: product.is_featured,
     variants: product.product_variants.map((v) => ({

@@ -1,4 +1,4 @@
-import { useRef, useState, type ChangeEvent } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { Upload, Star, Trash2, ArrowLeft, ArrowRight, RefreshCw, AlertCircle } from 'lucide-react'
 import type { ProductImageInput } from '../../../types/product'
 import { validateProductImageFile } from '../../../services/adminProducts'
@@ -16,8 +16,31 @@ export default function ProductImageUploader({
 }: ProductImageUploaderProps) {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const replaceInputRef = useRef<HTMLInputElement>(null)
+  const blobUrlsRef = useRef<Set<string>>(new Set())
   const [replaceIndex, setReplaceIndex] = useState<number | null>(null)
   const [validationError, setValidationError] = useState<string | null>(null)
+
+  // Revoke any remaining locally created blob URLs when the uploader unmounts
+  useEffect(() => {
+    const trackedUrls = blobUrlsRef.current
+    return () => {
+      trackedUrls.forEach((url) => URL.revokeObjectURL(url))
+      trackedUrls.clear()
+    }
+  }, [])
+
+  const createTrackedObjectUrl = (file: File): string => {
+    const url = URL.createObjectURL(file)
+    blobUrlsRef.current.add(url)
+    return url
+  }
+
+  const revokeTrackedObjectUrl = (url: string) => {
+    if (url.startsWith('blob:')) {
+      URL.revokeObjectURL(url)
+      blobUrlsRef.current.delete(url)
+    }
+  }
 
   const handleFilesSelected = (e: ChangeEvent<HTMLInputElement>) => {
     setValidationError(null)
@@ -29,12 +52,13 @@ export default function ProductImageUploader({
     for (const file of files) {
       const error = validateProductImageFile(file)
       if (error) {
+        validAdditions.forEach((item) => revokeTrackedObjectUrl(item.preview_url))
         setValidationError(error)
         return
       }
       validAdditions.push({
         file,
-        preview_url: URL.createObjectURL(file),
+        preview_url: createTrackedObjectUrl(file),
         alt_text_en: '',
         alt_text_ta: '',
         sort_order: images.length + validAdditions.length,
@@ -62,15 +86,15 @@ export default function ProductImageUploader({
     const target = images[replaceIndex]
     if (target.is_existing && target.id && target.storage_path) {
       onMarkRemoved({ id: target.id, storage_path: target.storage_path })
-    } else if (!target.is_existing && target.preview_url.startsWith('blob:')) {
-      URL.revokeObjectURL(target.preview_url)
+    } else if (!target.is_existing) {
+      revokeTrackedObjectUrl(target.preview_url)
     }
 
     const updated = images.map((img, idx) =>
       idx === replaceIndex
         ? {
             file,
-            preview_url: URL.createObjectURL(file),
+            preview_url: createTrackedObjectUrl(file),
             alt_text_en: img.alt_text_en,
             alt_text_ta: img.alt_text_ta,
             sort_order: idx,
@@ -105,8 +129,8 @@ export default function ProductImageUploader({
     const target = images[index]
     if (target.is_existing && target.id && target.storage_path) {
       onMarkRemoved({ id: target.id, storage_path: target.storage_path })
-    } else if (!target.is_existing && target.preview_url.startsWith('blob:')) {
-      URL.revokeObjectURL(target.preview_url)
+    } else if (!target.is_existing) {
+      revokeTrackedObjectUrl(target.preview_url)
     }
 
     const remaining = images.filter((_, idx) => idx !== index)
@@ -207,6 +231,23 @@ export default function ProductImageUploader({
                     )
                   }}
                   placeholder="Alt text (English)"
+                  aria-label={`Alt text in English for image ${index + 1}`}
+                  className="w-full rounded-control border border-sand bg-ivory/30 px-2.5 py-1.5 text-xs text-charcoal focus:border-burgundy focus:bg-white focus:outline-none"
+                />
+
+                <input
+                  type="text"
+                  value={img.alt_text_ta}
+                  onChange={(e) => {
+                    const val = e.target.value
+                    onChange(
+                      images.map((item, idx) =>
+                        idx === index ? { ...item, alt_text_ta: val } : item,
+                      ),
+                    )
+                  }}
+                  placeholder="Alt text (Tamil)"
+                  aria-label={`Alt text in Tamil for image ${index + 1}`}
                   className="w-full rounded-control border border-sand bg-ivory/30 px-2.5 py-1.5 text-xs text-charcoal focus:border-burgundy focus:bg-white focus:outline-none"
                 />
 

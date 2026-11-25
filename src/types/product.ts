@@ -72,7 +72,6 @@ export interface ProductFormValues {
   base_price_rupees: string
   compare_at_price_rupees: string
   stock_quantity: string
-  low_stock_threshold: string
   status: ProductStatus
   is_featured: boolean
   variants: ProductVariantInput[]
