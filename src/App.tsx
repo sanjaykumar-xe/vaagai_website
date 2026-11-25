@@ -6,6 +6,7 @@ import { ToastProvider } from './components/common/Toast'
 import { AuthProvider } from './context/AuthContext'
 import HomePage from './pages/HomePage'
 import ShopPage from './pages/ShopPage'
+import ProductDetailPage from './pages/ProductDetailPage'
 import NotFoundPage from './pages/NotFoundPage'
 import ProtectedRoute from './components/admin/ProtectedRoute'
 import AdminLayout from './components/admin/AdminLayout'
@@ -69,6 +70,7 @@ export default function App() {
                 {/* 1. Public Storefront */}
                 <Route path="/" element={<HomePage />} />
                 <Route path="/shop" element={<ShopPage />} />
+                <Route path="/products/:slug" element={<ProductDetailPage />} />
 
                 {/* 2. Public Admin Authentication Routes */}
                 <Route
