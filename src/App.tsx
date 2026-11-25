@@ -12,6 +12,9 @@ import AdminLayout from './components/admin/AdminLayout'
 const AdminLoginPage = lazy(() => import('./pages/admin/AdminLoginPage'))
 const AdminResetPasswordPage = lazy(() => import('./pages/admin/AdminResetPasswordPage'))
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
+const AdminProductsPage = lazy(() => import('./pages/admin/AdminProductsPage'))
+const AdminProductNewPage = lazy(() => import('./pages/admin/AdminProductNewPage'))
+const AdminProductEditPage = lazy(() => import('./pages/admin/AdminProductEditPage'))
 
 function AdminFallback() {
   return (
@@ -96,6 +99,30 @@ export default function App() {
                     element={
                       <Suspense fallback={<AdminFallback />}>
                         <AdminDashboardPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="products"
+                    element={
+                      <Suspense fallback={<AdminFallback />}>
+                        <AdminProductsPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="products/new"
+                    element={
+                      <Suspense fallback={<AdminFallback />}>
+                        <AdminProductNewPage />
+                      </Suspense>
+                    }
+                  />
+                  <Route
+                    path="products/:id/edit"
+                    element={
+                      <Suspense fallback={<AdminFallback />}>
+                        <AdminProductEditPage />
                       </Suspense>
                     }
                   />

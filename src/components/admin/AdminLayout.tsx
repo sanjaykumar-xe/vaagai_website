@@ -1,26 +1,46 @@
-import { Outlet, Link } from 'react-router-dom'
-import { ShieldCheck, LogOut, ExternalLink } from 'lucide-react'
+import { Outlet, Link, NavLink } from 'react-router-dom'
+import { ShieldCheck, LogOut, ExternalLink, LayoutDashboard, Package } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import LogoImage from '../common/LogoImage'
 
 export default function AdminLayout() {
   const { user, signOut } = useAuth()
 
+  const navLinkClass = ({ isActive }: { isActive: boolean }) =>
+    `inline-flex items-center gap-1.5 rounded-control px-3 py-1.5 text-xs font-semibold transition-colors ${
+      isActive
+        ? 'bg-burgundy/10 text-burgundy'
+        : 'text-charcoal/80 hover:bg-ivory hover:text-burgundy'
+    }`
+
   return (
     <div className="flex min-h-screen flex-col bg-ivory/40">
       {/* Top Admin Navbar */}
       <header className="sticky top-0 z-30 border-b border-sand bg-white/95 backdrop-blur shadow-sm">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* Left: Logo & Admin Badge */}
-          <div className="flex items-center gap-3">
-            <Link to="/admin" className="flex items-center gap-2">
-              <LogoImage className="h-9 w-auto" />
-            </Link>
-            <span className="hidden sm:inline-block h-5 w-px bg-sand" aria-hidden="true" />
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-burgundy/10 px-2.5 py-0.5 text-xs font-semibold text-burgundy">
-              <ShieldCheck className="h-3.5 w-3.5 text-burgundy" aria-hidden="true" />
-              <span>Admin Console</span>
-            </span>
+          {/* Left: Logo, Admin Badge & Navigation */}
+          <div className="flex items-center gap-3 sm:gap-5">
+            <div className="flex items-center gap-3">
+              <Link to="/admin" className="flex items-center gap-2">
+                <LogoImage className="h-9 w-auto" />
+              </Link>
+              <span className="hidden sm:inline-block h-5 w-px bg-sand" aria-hidden="true" />
+              <span className="hidden lg:inline-flex items-center gap-1.5 rounded-full bg-burgundy/10 px-2.5 py-0.5 text-xs font-semibold text-burgundy">
+                <ShieldCheck className="h-3.5 w-3.5 text-burgundy" aria-hidden="true" />
+                <span>Admin Console</span>
+              </span>
+            </div>
+
+            <nav aria-label="Admin navigation" className="flex items-center gap-1 sm:gap-2">
+              <NavLink to="/admin" end className={navLinkClass}>
+                <LayoutDashboard className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Dashboard</span>
+              </NavLink>
+              <NavLink to="/admin/products" className={navLinkClass}>
+                <Package className="h-3.5 w-3.5" aria-hidden="true" />
+                <span>Products</span>
+              </NavLink>
+            </nav>
           </div>
 
           {/* Right: User Email, Storefront Link & Sign Out */}
@@ -63,7 +83,7 @@ export default function AdminLayout() {
 
       {/* Admin Footer */}
       <footer className="border-t border-sand bg-white py-4 text-center text-xs text-muted">
-        <p>Vaagai Metals Traders · Secure Management Subsystem · Phase 2C Active</p>
+        <p>Vaagai Metals Traders · Secure Management Subsystem · Phase 3A Active</p>
       </footer>
     </div>
   )

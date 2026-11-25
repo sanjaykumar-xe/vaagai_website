@@ -1,12 +1,31 @@
 import { useEffect, useState } from 'react'
-import { ShieldCheck, Database, Layers, Package, Lock, CheckCircle2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import {
+  ShieldCheck,
+  Database,
+  Layers,
+  Package,
+  Lock,
+  CheckCircle2,
+  Plus,
+  ArrowRight,
+} from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
+import { fetchProductStats } from '../../services/adminProducts'
+import type { ProductStats } from '../../types/product'
+import ProductStatsCards from '../../components/admin/products/ProductStatsCards'
 
 export default function AdminDashboardPage() {
   const { user } = useAuth()
   const [categoryCount, setCategoryCount] = useState<number | null>(null)
-  const [productCount, setProductCount] = useState<number | null>(null)
+  const [productStats, setProductStats] = useState<ProductStats>({
+    total: 0,
+    published: 0,
+    draft: 0,
+    archived: 0,
+    outOfStock: 0,
+  })
   const [isLoadingCounts, setIsLoadingCounts] = useState(true)
 
   useEffect(() => {
@@ -14,18 +33,14 @@ export default function AdminDashboardPage() {
 
     async function loadSnapshot() {
       try {
-        // Query live counts directly from database without fabrication
-        const { count: catCount } = await supabase
-          .from('categories')
-          .select('*', { count: 'exact', head: true })
-
-        const { count: prodCount } = await supabase
-          .from('products')
-          .select('*', { count: 'exact', head: true })
+        const [{ count: catCount }, stats] = await Promise.all([
+          supabase.from('categories').select('*', { count: 'exact', head: true }),
+          fetchProductStats(),
+        ])
 
         if (isMounted) {
           setCategoryCount(catCount ?? 0)
-          setProductCount(prodCount ?? 0)
+          setProductStats(stats)
         }
       } catch (err) {
         console.error('[AdminDashboard] Error querying live schema snapshot:', err)
@@ -51,13 +66,13 @@ export default function AdminDashboardPage() {
           <div>
             <div className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-burgundy">
               <ShieldCheck className="h-4 w-4 text-gold" aria-hidden="true" />
-              <span>Phase 2C Active · Administrator Verified</span>
+              <span>Phase 3A Active · Administrator Verified</span>
             </div>
-            <h1 className="mt-2 font-serif text-2xl sm:text-3xl font-semibold text-charcoal">
+            <h1 className="mt-2 font-display text-2xl sm:text-3xl font-semibold text-charcoal">
               Welcome, {user?.email}
             </h1>
             <p className="mt-1 text-sm text-muted">
-              You are authenticated with full administrator privileges on the Vaagai Metals Traders production backend.
+              Manage your Vaagai Metals Traders product catalogue, pricing, inventory and visibility.
             </p>
           </div>
           <div className="rounded-control border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-semibold text-emerald-800 self-start sm:self-auto flex items-center gap-2">
@@ -65,6 +80,32 @@ export default function AdminDashboardPage() {
             <span>RLS Security Active</span>
           </div>
         </div>
+      </div>
+
+      {/* Product Catalogue Summary */}
+      <div className="space-y-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-charcoal">
+            Product Catalogue Summary
+          </h2>
+          <div className="flex items-center gap-3">
+            <Link
+              to="/admin/products"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-burgundy hover:underline"
+            >
+              <span>Manage Catalogue</span>
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
+            <Link
+              to="/admin/products/new"
+              className="inline-flex items-center gap-1.5 rounded-control bg-burgundy px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-wine transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>Add Product</span>
+            </Link>
+          </div>
+        </div>
+        <ProductStatsCards stats={productStats} isLoading={isLoadingCounts} />
       </div>
 
       {/* Live Backend System Snapshot (Real Data Only - No Fabrication) */}
@@ -79,7 +120,7 @@ export default function AdminDashboardPage() {
               <span className="text-xs font-medium uppercase tracking-wider">Product Categories</span>
               <Layers className="h-5 w-5 text-burgundy" aria-hidden="true" />
             </div>
-            <p className="mt-3 font-serif text-3xl font-semibold text-charcoal">
+            <p className="mt-3 font-display text-3xl font-semibold text-charcoal">
               {isLoadingCounts ? '...' : categoryCount ?? 8}
             </p>
             <p className="mt-1 text-xs text-muted">
@@ -93,11 +134,11 @@ export default function AdminDashboardPage() {
               <span className="text-xs font-medium uppercase tracking-wider">Catalog Products</span>
               <Package className="h-5 w-5 text-burgundy" aria-hidden="true" />
             </div>
-            <p className="mt-3 font-serif text-3xl font-semibold text-charcoal">
-              {isLoadingCounts ? '...' : productCount ?? 0}
+            <p className="mt-3 font-display text-3xl font-semibold text-charcoal">
+              {isLoadingCounts ? '...' : productStats.total}
             </p>
             <p className="mt-1 text-xs text-muted">
-              Ready for Phase 3 catalog publishing
+              {productStats.published} published · {productStats.draft} draft
             </p>
           </div>
 
@@ -107,7 +148,7 @@ export default function AdminDashboardPage() {
               <span className="text-xs font-medium uppercase tracking-wider">Storage Bucket</span>
               <Database className="h-5 w-5 text-burgundy" aria-hidden="true" />
             </div>
-            <p className="mt-3 font-serif text-lg font-semibold text-charcoal">
+            <p className="mt-3 font-display text-lg font-semibold text-charcoal">
               product-images
             </p>
             <p className="mt-1 text-xs text-muted">
